@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option java_package = "com.videodiary.android";
+option java_multiple_files = true;
+
+message UserPreferences {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 token_expires_at_epoch_millis = 3;
+  string user_id = 4;
+  string user_tier = 5;
+  string watermark_position = 6;
+  bool notifications_enabled = 7;
+  bool dark_mode_enabled = 8;
+}
