@@ -1,0 +1,1392 @@
+openapi: 3.0.3
+info:
+  title: Video Diary API
+  description: |
+    Mobile-first video diary application API. Users upload daily videos, select a 1-second clip
+    from each day, and create compilations showing their life over time.
+
+    ## Authentication
+    Most endpoints require a Bearer JWT token in the `Authorization` header.
+    Obtain tokens via `/auth/register` or `/auth/login`.
+
+    Services behind the gateway receive the authenticated user's ID via the `X-User-Id` header.
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:8080
+    description: API Gateway (local development)
+
+tags:
+  - name: Authentication
+    description: Registration, login, token refresh, and logout
+  - name: Users
+    description: User quota and tier information
+  - name: Videos
+    description: Video upload coordination and metadata management
+  - name: Clips
+    description: Clip selection, retrieval, and calendar view
+  - name: Compilations
+    description: Compilation creation, progress tracking, and history
+  - name: Storage
+    description: S3/MinIO presigned URL generation and object management
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /auth/login or /auth/register
+
+  parameters:
+    XUserId:
+      name: X-User-Id
+      in: header
+      required: true
+      description: ID of the authenticated user
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Page number (0-based)
+      schema:
+        type: integer
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      description: Page size
+      schema:
+        type: integer
+        default: 20
+
+  schemas:
+    # ── Enums ──────────────────────────────────────────────
+    UserTier:
+      type: string
+      enum: [FREE, PREMIUM, ENTERPRISE]
+
+    VideoStatus:
+      type: string
+      enum: [UPLOADING, PROCESSING, READY, FAILED, CLIP_EXTRACTED]
+
+    ClipStatus:
+      type: string
+      enum: [EXTRACTING, READY, FAILED]
+
+    CompilationStatus:
+      type: string
+      enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+
+    QualityOption:
+      type: string
+      enum: [Q_480P, Q_720P, Q_1080P, Q_4K]
+
+    WatermarkPosition:
+      type: string
+      enum: [TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, CENTER_TOP, CENTER_BOTTOM]
+
+    # ── Auth DTOs ──────────────────────────────────────────
+    RegisterRequest:
+      type: object
+      description: Request to register a new user account
+      required: [email, password, displayName]
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          description: User password (min 8 characters)
+          example: securePassword123
+        displayName:
+          type: string
+          maxLength: 100
+          description: Display name shown in the app
+          example: John Doe
+        timezone:
+          type: string
+          nullable: true
+          description: IANA timezone identifier
+          example: America/New_York
+
+    LoginRequest:
+      type: object
+      description: Request to log in with email and password
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          description: User password
+          example: securePassword123
+
+    RefreshRequest:
+      type: object
+      description: Request to refresh an access token
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          description: Valid refresh token from a previous login or refresh
+
+    AuthResponse:
+      type: object
+      description: Authentication response with JWT tokens and user info
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token for API authorization
+        refreshToken:
+          type: string
+          description: Refresh token for obtaining new access tokens
+        expiresIn:
+          type: integer
+          format: int64
+          description: Access token expiry time in seconds
+          example: 900
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    UserResponse:
+      type: object
+      description: User profile information
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        displayName:
+          type: string
+          description: Display name
+          example: John Doe
+        tier:
+          $ref: '#/components/schemas/UserTier'
+        emailVerified:
+          type: boolean
+          description: Whether the email has been verified
+        profilePictureUrl:
+          type: string
+          nullable: true
+          description: URL to profile picture, if set
+        timezone:
+          type: string
+          description: User timezone
+          example: America/New_York
+        defaultWatermarkPosition:
+          $ref: '#/components/schemas/WatermarkPosition'
+        notificationsEnabled:
+          type: boolean
+          description: Whether push notifications are enabled
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+
+    TierLimits:
+      type: object
+      description: Tier-based usage limits
+      properties:
+        maxVideosPerDay:
+          type: integer
+          description: Maximum video uploads per day
+          example: 1
+        maxVideoSizeMb:
+          type: integer
+          description: Maximum video file size in MB
+          example: 200
+        maxCompilationDays:
+          type: integer
+          description: Maximum days in a compilation
+          example: 365
+        compilationRetentionDays:
+          type: integer
+          description: Days before compilations expire
+          example: 7
+
+    QuotaResponse:
+      type: object
+      description: User quota and tier information
+      properties:
+        tier:
+          $ref: '#/components/schemas/UserTier'
+        limits:
+          $ref: '#/components/schemas/TierLimits'
+
+    # ── Video DTOs ─────────────────────────────────────────
+    InitiateUploadRequest:
+      type: object
+      description: Request to initiate a video upload
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date the video was recorded
+          example: "2026-02-17"
+
+    InitiateUploadResponse:
+      type: object
+      description: Response with video ID and presigned upload URL
+      properties:
+        videoId:
+          type: string
+          format: uuid
+          description: ID of the created video record
+        uploadUrl:
+          type: string
+          description: Presigned URL for uploading the video file
+
+    VideoResponse:
+      type: object
+      description: Video metadata
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique video identifier
+        userId:
+          type: string
+          format: uuid
+          description: Owner user ID
+        date:
+          type: string
+          format: date
+          description: Date the video was recorded
+        status:
+          $ref: '#/components/schemas/VideoStatus'
+        fileSize:
+          type: integer
+          format: int64
+          nullable: true
+          description: File size in bytes
+        durationSeconds:
+          type: number
+          format: double
+          nullable: true
+          description: Video duration in seconds
+        spriteSheetUrl:
+          type: string
+          nullable: true
+          description: URL to sprite sheet for timeline scrubbing
+        waveformUrl:
+          type: string
+          nullable: true
+          description: URL to audio waveform data
+        createdAt:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    VideoPageResponse:
+      type: object
+      description: Paginated list of videos
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoResponse'
+          description: List of videos on this page
+        page:
+          type: integer
+          description: Current page number (0-based)
+          example: 0
+        size:
+          type: integer
+          description: Page size
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: Total number of videos
+        totalPages:
+          type: integer
+          description: Total number of pages
+
+    # ── Clip DTOs ──────────────────────────────────────────
+    SelectClipRequest:
+      type: object
+      description: Request to select a 1-second clip from a video
+      required: [videoId, date, startTimeSeconds]
+      properties:
+        videoId:
+          type: string
+          format: uuid
+          description: ID of the source video
+        date:
+          type: string
+          format: date
+          description: Date the clip represents
+          example: "2026-02-17"
+        startTimeSeconds:
+          type: number
+          format: double
+          minimum: 0
+          description: Start time in seconds within the video
+          example: 12.5
+
+    ClipResponse:
+      type: object
+      description: Clip metadata
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique clip identifier
+        userId:
+          type: string
+          format: uuid
+          description: Owner user ID
+        videoId:
+          type: string
+          format: uuid
+          description: Source video ID
+        date:
+          type: string
+          format: date
+          description: Date the clip represents
+        status:
+          $ref: '#/components/schemas/ClipStatus'
+        startTimeSeconds:
+          type: number
+          format: double
+          description: Start time in seconds within the source video
+          example: 12.5
+        objectKey:
+          type: string
+          nullable: true
+          description: Storage object key for the extracted clip
+        fileSize:
+          type: integer
+          format: int64
+          nullable: true
+          description: Clip file size in bytes
+        createdAt:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    ClipPageResponse:
+      type: object
+      description: Paginated list of clips
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClipResponse'
+          description: List of clips on this page
+        page:
+          type: integer
+          description: Current page number (0-based)
+          example: 0
+        size:
+          type: integer
+          description: Page size
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: Total number of clips
+        totalPages:
+          type: integer
+          description: Total number of pages
+
+    CalendarDayResponse:
+      type: object
+      description: Clip availability for a single day
+      properties:
+        date:
+          type: string
+          format: date
+          description: The calendar date
+        hasClip:
+          type: boolean
+          description: Whether a clip exists for this date
+        clipId:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the clip, if one exists
+        status:
+          $ref: '#/components/schemas/ClipStatus'
+
+    CalendarMonthResponse:
+      type: object
+      description: Calendar view for an entire month
+      properties:
+        year:
+          type: integer
+          description: Year
+          example: 2026
+        month:
+          type: integer
+          description: Month (1-12)
+          example: 2
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarDayResponse'
+          description: Clip data for each day of the month
+
+    # ── Compilation DTOs ───────────────────────────────────
+    CreateCompilationRequest:
+      type: object
+      description: Request to create a new compilation from clips
+      required: [startDate, endDate, quality, watermarkPosition, clipIds]
+      properties:
+        startDate:
+          type: string
+          format: date
+          description: Start date of the compilation range
+          example: "2026-01-01"
+        endDate:
+          type: string
+          format: date
+          description: End date of the compilation range
+          example: "2026-01-31"
+        quality:
+          $ref: '#/components/schemas/QualityOption'
+        watermarkPosition:
+          $ref: '#/components/schemas/WatermarkPosition'
+        clipIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+          description: IDs of clips to include in the compilation
+
+    CompilationResponse:
+      type: object
+      description: Compilation metadata
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique compilation identifier
+        userId:
+          type: string
+          format: uuid
+          description: Owner user ID
+        startDate:
+          type: string
+          format: date
+          description: Start date of the compilation range
+        endDate:
+          type: string
+          format: date
+          description: End date of the compilation range
+        status:
+          $ref: '#/components/schemas/CompilationStatus'
+        quality:
+          $ref: '#/components/schemas/QualityOption'
+        watermarkPosition:
+          $ref: '#/components/schemas/WatermarkPosition'
+        clipCount:
+          type: integer
+          description: Number of clips in the compilation
+          example: 31
+        clipIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: IDs of clips included
+        objectKey:
+          type: string
+          nullable: true
+          description: Storage object key for the compiled video
+        fileSizeBytes:
+          type: integer
+          format: int64
+          nullable: true
+          description: Compiled video file size in bytes
+        durationSeconds:
+          type: number
+          format: double
+          nullable: true
+          description: Compiled video duration in seconds
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the compilation will be auto-deleted
+        createdAt:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    CompilationStatusResponse:
+      type: object
+      description: Compilation processing status and progress
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Compilation identifier
+        status:
+          $ref: '#/components/schemas/CompilationStatus'
+        clipCount:
+          type: integer
+          description: Total number of clips to process
+          example: 31
+        currentClip:
+          type: integer
+          nullable: true
+          description: Index of the clip currently being processed
+          example: 15
+        percentComplete:
+          type: integer
+          nullable: true
+          description: Overall completion percentage (0-100)
+          example: 48
+
+    CompilationPageResponse:
+      type: object
+      description: Paginated list of compilations
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompilationResponse'
+          description: List of compilations on this page
+        page:
+          type: integer
+          description: Current page number (0-based)
+          example: 0
+        size:
+          type: integer
+          description: Page size
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: Total number of compilations
+        totalPages:
+          type: integer
+          description: Total number of pages
+
+    # ── Storage DTOs ───────────────────────────────────────
+    PresignedUploadRequest:
+      type: object
+      description: Request to generate a presigned upload URL
+      required: [bucket, objectKey]
+      properties:
+        bucket:
+          type: string
+          description: Target bucket name
+          example: videodiary-temp
+        objectKey:
+          type: string
+          description: Object key (path) in the bucket
+          example: uploads/user123/video.mp4
+
+    PresignedDownloadRequest:
+      type: object
+      description: Request to generate a presigned download URL
+      required: [bucket, objectKey]
+      properties:
+        bucket:
+          type: string
+          description: Source bucket name
+          example: videodiary-clips
+        objectKey:
+          type: string
+          description: Object key (path) in the bucket
+          example: clips/user123/2026-02-17.mp4
+
+    PresignedUrlResponse:
+      type: object
+      description: Response containing a presigned URL
+      properties:
+        url:
+          type: string
+          description: The presigned URL
+        bucket:
+          type: string
+          description: Bucket name
+          example: videodiary-temp
+        objectKey:
+          type: string
+          description: Object key
+          example: uploads/user123/video.mp4
+
+    ObjectInfoResponse:
+      type: object
+      description: Object existence and size information
+      properties:
+        bucket:
+          type: string
+          description: Bucket name
+          example: videodiary-clips
+        objectKey:
+          type: string
+          description: Object key
+          example: clips/user123/2026-02-17.mp4
+        exists:
+          type: boolean
+          description: Whether the object exists
+        size:
+          type: integer
+          format: int64
+          nullable: true
+          description: Object size in bytes, null if object doesn't exist
+          example: 1048576
+
+    # ── Shared ─────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      description: Error response
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          description: Human-readable error message
+          example: Email is required
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+
+paths:
+  # ═══════════════════════════════════════════════════════
+  #  Authentication
+  # ═══════════════════════════════════════════════════════
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      description: Creates a new user account and returns JWT tokens
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Log in
+      description: Authenticates user credentials and returns JWT tokens
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: Issues a new access token using a valid refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Log out
+      description: Invalidates the current access token by adding it to the blacklist
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Logged out successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user
+      description: Returns the profile of the currently authenticated user
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ═══════════════════════════════════════════════════════
+  #  Users
+  # ═══════════════════════════════════════════════════════
+  /users/quota:
+    get:
+      tags: [Users]
+      summary: Get user quota
+      description: Returns the current user's tier limits and quota information
+      operationId: getQuota
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Quota information returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ═══════════════════════════════════════════════════════
+  #  Videos
+  # ═══════════════════════════════════════════════════════
+  /videos/upload/initiate:
+    post:
+      tags: [Videos]
+      summary: Initiate video upload
+      description: Creates a video record and returns a presigned upload URL
+      operationId: initiateUpload
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateUploadRequest'
+      responses:
+        '201':
+          description: Upload initiated, presigned URL returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiateUploadResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Video already exists for this date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /videos/{videoId}/upload/complete:
+    post:
+      tags: [Videos]
+      summary: Complete video upload
+      description: Marks the video upload as complete and triggers processing
+      operationId: completeUpload
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: videoId
+          in: path
+          required: true
+          description: ID of the video
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upload marked as complete
+        '404':
+          description: Video not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /videos:
+    get:
+      tags: [Videos]
+      summary: List videos
+      description: Returns a paginated list of videos, optionally filtered by date or status
+      operationId: listVideos
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: date
+          in: query
+          required: false
+          description: Filter by date (ISO format)
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          required: false
+          description: Filter by processing status
+          schema:
+            $ref: '#/components/schemas/VideoStatus'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Video list returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoPageResponse'
+
+  /videos/{videoId}:
+    get:
+      tags: [Videos]
+      summary: Get video details
+      description: Returns metadata for a specific video
+      operationId: getVideo
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: videoId
+          in: path
+          required: true
+          description: ID of the video
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Video details returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoResponse'
+        '404':
+          description: Video not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Videos]
+      summary: Delete video
+      description: Deletes a video and its associated storage objects
+      operationId: deleteVideo
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: videoId
+          in: path
+          required: true
+          description: ID of the video
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Video deleted
+        '404':
+          description: Video not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ═══════════════════════════════════════════════════════
+  #  Clips
+  # ═══════════════════════════════════════════════════════
+  /clips/select:
+    post:
+      tags: [Clips]
+      summary: Select a 1-second clip
+      description: Selects a 1-second moment from a processed video and triggers clip extraction
+      operationId: selectClip
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectClipRequest'
+      responses:
+        '201':
+          description: Clip selection initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClipResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Video not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Clip already exists for this date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clips:
+    get:
+      tags: [Clips]
+      summary: List clips
+      description: Returns a paginated list of the user's clips
+      operationId: listClips
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Clip list returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClipPageResponse'
+
+  /clips/{clipId}:
+    get:
+      tags: [Clips]
+      summary: Get clip details
+      description: Returns metadata for a specific clip
+      operationId: getClip
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: clipId
+          in: path
+          required: true
+          description: ID of the clip
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Clip details returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClipResponse'
+        '404':
+          description: Clip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Clips]
+      summary: Delete clip
+      description: Deletes a clip and its associated storage object
+      operationId: deleteClip
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: clipId
+          in: path
+          required: true
+          description: ID of the clip
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Clip deleted
+        '404':
+          description: Clip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clips/calendar:
+    get:
+      tags: [Clips]
+      summary: Get calendar view
+      description: Returns clip availability for each day of the specified month
+      operationId: getCalendar
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: year
+          in: query
+          required: true
+          description: Year (e.g. 2026)
+          schema:
+            type: integer
+            example: 2026
+        - name: month
+          in: query
+          required: true
+          description: Month (1-12)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 2
+      responses:
+        '200':
+          description: Calendar data returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarMonthResponse'
+        '400':
+          description: Invalid year or month
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ═══════════════════════════════════════════════════════
+  #  Compilations
+  # ═══════════════════════════════════════════════════════
+  /compilations/create:
+    post:
+      tags: [Compilations]
+      summary: Create a compilation
+      description: Requests a new compilation from selected clips within a date range
+      operationId: createCompilation
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompilationRequest'
+      responses:
+        '201':
+          description: Compilation request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompilationResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /compilations/{compilationId}:
+    get:
+      tags: [Compilations]
+      summary: Get compilation details
+      description: Returns compilation metadata and extends its expiry on access
+      operationId: getCompilation
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: compilationId
+          in: path
+          required: true
+          description: ID of the compilation
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Compilation details returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompilationResponse'
+        '404':
+          description: Compilation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Compilations]
+      summary: Delete compilation
+      description: Deletes a compilation and its associated storage object
+      operationId: deleteCompilation
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: compilationId
+          in: path
+          required: true
+          description: ID of the compilation
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Compilation deleted
+        '404':
+          description: Compilation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /compilations/{compilationId}/status:
+    get:
+      tags: [Compilations]
+      summary: Get compilation status
+      description: Returns the current processing status and progress of a compilation
+      operationId: getCompilationStatus
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: compilationId
+          in: path
+          required: true
+          description: ID of the compilation
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Status returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompilationStatusResponse'
+        '404':
+          description: Compilation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /compilations/history:
+    get:
+      tags: [Compilations]
+      summary: List compilations
+      description: Returns a paginated list of the user's compilations, optionally filtered by status
+      operationId: listCompilations
+      parameters:
+        - $ref: '#/components/parameters/XUserId'
+        - name: status
+          in: query
+          required: false
+          description: Filter by compilation status
+          schema:
+            $ref: '#/components/schemas/CompilationStatus'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Compilation list returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompilationPageResponse'
+
+  # ═══════════════════════════════════════════════════════
+  #  Storage
+  # ═══════════════════════════════════════════════════════
+  /storage/presigned-url/upload:
+    post:
+      tags: [Storage]
+      summary: Generate upload URL
+      description: Generates a presigned PUT URL for uploading an object to MinIO
+      operationId: generateUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignedUploadRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrlResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /storage/presigned-url/download:
+    post:
+      tags: [Storage]
+      summary: Generate download URL
+      description: Generates a presigned GET URL for downloading an object from MinIO
+      operationId: generateDownloadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignedDownloadRequest'
+      responses:
+        '200':
+          description: Presigned download URL generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrlResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /storage/objects/info:
+    get:
+      tags: [Storage]
+      summary: Get object info
+      description: Checks if an object exists and returns its size
+      operationId: getObjectInfo
+      parameters:
+        - name: bucket
+          in: query
+          required: true
+          description: Bucket name
+          schema:
+            type: string
+            example: videodiary-clips
+        - name: objectKey
+          in: query
+          required: true
+          description: Object key (path)
+          schema:
+            type: string
+            example: clips/user123/2026-02-17.mp4
+      responses:
+        '200':
+          description: Object info returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectInfoResponse'
+
+  /storage/objects:
+    delete:
+      tags: [Storage]
+      summary: Delete object
+      description: Deletes an object from the specified bucket
+      operationId: deleteObject
+      parameters:
+        - name: bucket
+          in: query
+          required: true
+          description: Bucket name
+          schema:
+            type: string
+            example: videodiary-clips
+        - name: objectKey
+          in: query
+          required: true
+          description: Object key (path)
+          schema:
+            type: string
+            example: clips/user123/2026-02-17.mp4
+      responses:
+        '204':
+          description: Object deleted
+        '404':
+          description: Object not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
