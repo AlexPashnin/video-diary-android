@@ -1,6 +1,9 @@
 package com.videodiary.android.data.repository
 
 import com.videodiary.android.data.local.datastore.TokenDataStore
+import com.videodiary.android.data.local.db.dao.CalendarDayDao
+import com.videodiary.android.data.local.db.dao.ClipDao
+import com.videodiary.android.data.local.db.dao.VideoDao
 import com.videodiary.android.data.remote.api.AuthApi
 import com.videodiary.android.data.remote.dto.auth.LoginRequest
 import com.videodiary.android.data.remote.dto.auth.RefreshRequest
@@ -15,6 +18,9 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authApi: AuthApi,
     private val tokenDataStore: TokenDataStore,
+    private val videoDao: VideoDao,
+    private val clipDao: ClipDao,
+    private val calendarDayDao: CalendarDayDao,
 ) : AuthRepository {
 
     override suspend fun login(email: String, password: String): User {
@@ -67,7 +73,11 @@ class AuthRepositoryImpl @Inject constructor(
         try {
             authApi.logout()
         } finally {
+            // Clear tokens and all locally cached data regardless of API result
             tokenDataStore.clearTokens()
+            videoDao.deleteAll()
+            clipDao.deleteAll()
+            calendarDayDao.deleteAll()
         }
     }
 

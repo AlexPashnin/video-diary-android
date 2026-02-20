@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -42,11 +45,15 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val passwordFocus = remember { FocusRequester() }
 
     LaunchedEffect(state) {
         when (state) {
             is LoginState.Success -> onLoginSuccess()
-            is LoginState.Error -> snackbarHostState.showSnackbar((state as LoginState.Error).message)
+            is LoginState.Error -> {
+                snackbarHostState.showSnackbar((state as LoginState.Error).message)
+                viewModel.resetState()
+            }
             else -> Unit
         }
     }
@@ -63,7 +70,11 @@ fun LoginScreen(
         ) {
             Text(text = "Video Diary", style = MaterialTheme.typography.headlineLarge)
             Spacer(Modifier.height(8.dp))
-            Text(text = "Your life, one second at a time", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Your life, one second at a time",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             Spacer(Modifier.height(40.dp))
 
@@ -78,6 +89,7 @@ fun LoginScreen(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next,
                 ),
+                keyboardActions = KeyboardActions(onNext = { passwordFocus.requestFocus() }),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -91,21 +103,21 @@ fun LoginScreen(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
                 ),
+                keyboardActions = KeyboardActions(onDone = { viewModel.login(email, password) }),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(passwordFocus),
             )
             Spacer(Modifier.height(24.dp))
 
+            val isLoading = state is LoginState.Loading
             Button(
                 onClick = { viewModel.login(email, password) },
-                enabled = state !is LoginState.Loading && email.isNotBlank() && password.isNotBlank(),
+                enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                if (state is LoginState.Loading) {
-                    InlineLoadingIndicator()
-                } else {
-                    Text("Sign In")
-                }
+                if (isLoading) InlineLoadingIndicator() else Text("Sign in")
             }
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onNavigateToRegister) {
@@ -114,3 +126,4 @@ fun LoginScreen(
         }
     }
 }
+
