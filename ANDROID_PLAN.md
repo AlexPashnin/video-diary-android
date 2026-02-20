@@ -142,7 +142,7 @@ app/
 
 ## Implementation Plan — Step-by-Step
 
-### Phase 1: Project Bootstrap & Core Infrastructure
+### ✅ Phase 1: Project Bootstrap & Core Infrastructure — IMPLEMENTED
 
 #### Step 1 — Project Setup
 - Create new Android project with Compose template
@@ -194,7 +194,7 @@ app/
 
 ---
 
-### Phase 2: Authentication
+### ✅ Phase 2: Authentication — IMPLEMENTED
 
 #### Step 7 — Login & Registration Screens
 - **LoginScreen**: email + password fields, login button, "Create account" link
@@ -215,7 +215,7 @@ app/
 
 ---
 
-### Phase 3: Home & Calendar
+### ✅ Phase 3: Home & Calendar — IMPLEMENTED
 
 #### Step 9 — Calendar Home Screen
 - Fetch calendar data via `GET /clips/calendar?year=YYYY&month=MM`
@@ -230,7 +230,7 @@ app/
 
 ---
 
-### Phase 4: Video Upload Flow
+### ✅ Phase 4: Video Upload Flow — IMPLEMENTED
 
 #### Step 10 — Video Capture (CameraX)
 - **RecordScreen**: full-screen camera preview

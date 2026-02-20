@@ -5,14 +5,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Status
 A mobile-first video diary application where users upload daily videos, select a meaningful 1-second clip from each day, and automatically create compilations showing their life over time. Each second in the compilation displays the date it was recorded, creating a visual timeline of memories.
 
-This project is in the **planning phase** — no source code has been implemented yet. The repository contains three specification documents:
+**Implementation status:**
+- ✅ Phase 1 — Project Bootstrap & Core Infrastructure (Steps 1–6)
+- ✅ Phase 2 — Authentication (Steps 7–8)
+- ✅ Phase 3 — Home & Calendar (Step 9)
+- ✅ Phase 4 — Video Upload Flow (Steps 10–12)
+- ⏳ Phase 5 — Clip Selection (Step 13)
+- ⏳ Phase 6 — Compilations (Steps 14–16)
+- ⏳ Phase 7 — Video Playback (Step 17)
+- ⏳ Phase 8 — Settings & Profile (Step 18)
+- ⏳ Phase 9 — Push Notifications (Step 19)
+- ⏳ Phase 10 — Polish & Production Readiness (Steps 20–24)
+
+Specification documents:
 - `ANDROID_PLAN.md` — 24-step implementation roadmap
 - `requirements.md` — Functional and non-functional requirements
 - `openapi.yaml` — Backend API specification
 
 ## Build Commands
 
-Once implemented, the project will use Gradle with Kotlin DSL:
+The project uses Gradle with Kotlin DSL:
 
 ```bash
 ./gradlew assembleDebug          # Build debug APK
