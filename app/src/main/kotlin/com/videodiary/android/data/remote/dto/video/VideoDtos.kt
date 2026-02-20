@@ -23,6 +23,7 @@ data class VideoResponseDto(
     val durationSeconds: Double? = null,
     val spriteSheetUrl: String? = null,
     val waveformUrl: String? = null,
+    val videoUrl: String? = null,
     val createdAt: String,
     val updatedAt: String,
 )

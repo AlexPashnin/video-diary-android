@@ -12,6 +12,7 @@ data class Video(
     val durationSeconds: Double?,
     val spriteSheetUrl: String?,
     val waveformUrl: String?,
+    val videoUrl: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
 )

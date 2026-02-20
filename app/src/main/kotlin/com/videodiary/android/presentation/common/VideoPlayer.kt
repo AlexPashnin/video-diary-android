@@ -4,6 +4,7 @@ import android.net.Uri
 import android.view.ViewGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -18,6 +19,7 @@ fun VideoPlayer(
     modifier: Modifier = Modifier,
     playWhenReady: Boolean = true,
     useController: Boolean = true,
+    seekToMillis: Long? = null,
 ) {
     val context = LocalContext.current
     val exoPlayer = remember(uri) {
@@ -26,6 +28,10 @@ fun VideoPlayer(
             prepare()
             this.playWhenReady = playWhenReady
         }
+    }
+
+    LaunchedEffect(seekToMillis) {
+        if (seekToMillis != null) exoPlayer.seekTo(seekToMillis)
     }
 
     DisposableEffect(exoPlayer) {

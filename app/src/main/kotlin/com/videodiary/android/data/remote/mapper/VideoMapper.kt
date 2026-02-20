@@ -15,6 +15,7 @@ fun VideoResponseDto.toDomain(): Video = Video(
     durationSeconds = durationSeconds,
     spriteSheetUrl = spriteSheetUrl,
     waveformUrl = waveformUrl,
+    videoUrl = videoUrl,
     createdAt = Instant.parse(createdAt),
     updatedAt = Instant.parse(updatedAt),
 )

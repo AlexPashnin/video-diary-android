@@ -21,6 +21,7 @@ fun VideoEntity.toDomain(): Video = Video(
     durationSeconds = durationSeconds,
     spriteSheetUrl = spriteSheetUrl,
     waveformUrl = waveformUrl,
+    videoUrl = videoUrl,
     createdAt = Instant.ofEpochMilli(createdAt),
     updatedAt = Instant.ofEpochMilli(updatedAt),
 )
@@ -34,6 +35,7 @@ fun Video.toEntity(): VideoEntity = VideoEntity(
     durationSeconds = durationSeconds,
     spriteSheetUrl = spriteSheetUrl,
     waveformUrl = waveformUrl,
+    videoUrl = videoUrl,
     createdAt = createdAt.toEpochMilli(),
     updatedAt = updatedAt.toEpochMilli(),
 )

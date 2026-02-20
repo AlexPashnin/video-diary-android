@@ -13,6 +13,7 @@ data class VideoEntity(
     val durationSeconds: Double?,
     val spriteSheetUrl: String?,
     val waveformUrl: String?,
+    val videoUrl: String?,
     val createdAt: Long, // epoch millis
     val updatedAt: Long, // epoch millis
 )
