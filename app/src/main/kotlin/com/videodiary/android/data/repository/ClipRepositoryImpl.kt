@@ -14,6 +14,7 @@ import com.videodiary.android.domain.repository.ClipRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,16 +44,25 @@ class ClipRepositoryImpl @Inject constructor(
         clipDao.observeById(clipId).filterNotNull().map { it.toDomain() }
 
     override suspend fun listClips(page: Int): List<Clip> {
-        val clips = clipApi.listClips(page = page).content.map { it.toDomain() }
-        if (page == 0) clipDao.upsertAll(clips.map { it.toEntity() })
-        return clips
+        return try {
+            val clips = clipApi.listClips(page = page).content.map { it.toDomain() }
+            if (page == 0) clipDao.upsertAll(clips.map { it.toEntity() })
+            clips
+        } catch (e: IOException) {
+            if (page == 0) clipDao.getAll().map { it.toDomain() } else throw e
+        }
     }
 
     override suspend fun getCalendar(year: Int, month: Int): CalendarMonth {
-        val remote = clipApi.getCalendar(year, month).toDomain()
-        calendarDayDao.deleteByMonth(year, month)
-        calendarDayDao.upsertAll(remote.days.map { it.toEntity(year, month) })
-        return remote
+        return try {
+            val remote = clipApi.getCalendar(year, month).toDomain()
+            calendarDayDao.deleteByMonth(year, month)
+            calendarDayDao.upsertAll(remote.days.map { it.toEntity(year, month) })
+            remote
+        } catch (e: IOException) {
+            val cached = calendarDayDao.getByMonth(year, month)
+            if (cached.isNotEmpty()) cached.toCalendarMonth(year, month) else throw e
+        }
     }
 
     override fun observeCalendar(year: Int, month: Int): Flow<CalendarMonth> =

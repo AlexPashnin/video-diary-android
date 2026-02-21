@@ -12,6 +12,7 @@ import com.videodiary.android.domain.repository.VideoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,9 +33,13 @@ class VideoRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getVideo(videoId: String): Video {
-        val remote = videoApi.getVideo(videoId).toDomain()
-        videoDao.upsert(remote.toEntity())
-        return remote
+        return try {
+            val remote = videoApi.getVideo(videoId).toDomain()
+            videoDao.upsert(remote.toEntity())
+            remote
+        } catch (e: IOException) {
+            videoDao.getById(videoId)?.toDomain() ?: throw e
+        }
     }
 
     override fun observeVideo(videoId: String): Flow<Video> =
@@ -45,13 +50,17 @@ class VideoRepositoryImpl @Inject constructor(
         status: VideoStatus?,
         page: Int,
     ): List<Video> {
-        val remote = videoApi.listVideos(
-            date = date?.toString(),
-            status = status?.name,
-            page = page,
-        ).content.map { it.toDomain() }
-        if (page == 0) videoDao.upsertAll(remote.map { it.toEntity() })
-        return remote
+        return try {
+            val remote = videoApi.listVideos(
+                date = date?.toString(),
+                status = status?.name,
+                page = page,
+            ).content.map { it.toDomain() }
+            if (page == 0) videoDao.upsertAll(remote.map { it.toEntity() })
+            remote
+        } catch (e: IOException) {
+            if (page == 0) videoDao.getAll().map { it.toDomain() } else throw e
+        }
     }
 
     override suspend fun deleteVideo(videoId: String) {

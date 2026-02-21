@@ -13,6 +13,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.videodiary.android.presentation.AppViewModel
+import com.videodiary.android.presentation.common.OfflineBanner
 import com.videodiary.android.presentation.screens.auth.LoginScreen
 import com.videodiary.android.presentation.screens.auth.RegisterScreen
 import com.videodiary.android.presentation.screens.clipselect.ClipSelectScreen
@@ -36,12 +38,15 @@ private val bottomNavRoutes = setOf(
 fun NavGraph(
     navController: NavHostController = rememberNavController(),
     startDestination: String = Screen.Login.route,
+    appViewModel: AppViewModel = hiltViewModel(),
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomNavRoutes
+    val isOnline by appViewModel.isOnline.collectAsStateWithLifecycle()
 
     Scaffold(
+        topBar = { OfflineBanner(isOffline = !isOnline) },
         bottomBar = {
             if (showBottomBar) {
                 BottomNavBar(navController)

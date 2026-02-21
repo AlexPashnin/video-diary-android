@@ -33,3 +33,21 @@
 
 # Protobuf
 -keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
+
+# Firebase Crashlytics
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
+-keep class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.crashlytics.**
+
+# Firebase Analytics
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# Media3 / ExoPlayer
+-keep class androidx.media3.** { *; }
+-dontwarn androidx.media3.**
+
+# CameraX
+-keep class androidx.camera.** { *; }
+-dontwarn androidx.camera.**

@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import androidx.work.Configuration
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.videodiary.android.data.notification.VideoDiaryFirebaseMessagingService
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -23,6 +24,8 @@ class VideoDiaryApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        // Disable Crashlytics in debug builds to avoid noise during development
+        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
     }
 
     private fun createNotificationChannel() {
