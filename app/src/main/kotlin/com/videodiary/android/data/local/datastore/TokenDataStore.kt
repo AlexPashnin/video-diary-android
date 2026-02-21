@@ -76,4 +76,11 @@ class TokenDataStore @Inject constructor(
     suspend fun updateDarkMode(enabled: Boolean) {
         dataStore.updateData { it.toBuilder().setDarkModeEnabled(enabled).build() }
     }
+
+    suspend fun getFcmToken(): String? =
+        dataStore.data.first().fcmToken.takeIf { it.isNotBlank() }
+
+    suspend fun saveFcmToken(token: String) {
+        dataStore.updateData { it.toBuilder().setFcmToken(token).build() }
+    }
 }

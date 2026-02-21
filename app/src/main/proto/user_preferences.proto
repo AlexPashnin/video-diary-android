@@ -12,4 +12,5 @@ message UserPreferences {
   string watermark_position = 6;
   bool notifications_enabled = 7;
   bool dark_mode_enabled = 8;
+  string fcm_token = 9;
 }

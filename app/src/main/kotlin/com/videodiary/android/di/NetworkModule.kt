@@ -5,6 +5,7 @@ import com.videodiary.android.BuildConfig
 import com.videodiary.android.data.remote.api.AuthApi
 import com.videodiary.android.data.remote.api.ClipApi
 import com.videodiary.android.data.remote.api.CompilationApi
+import com.videodiary.android.data.remote.api.NotificationApi
 import com.videodiary.android.data.remote.api.StorageApi
 import com.videodiary.android.data.remote.api.VideoApi
 import com.videodiary.android.data.remote.interceptor.AuthInterceptor
@@ -80,6 +81,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideStorageApi(retrofit: Retrofit): StorageApi = retrofit.create(StorageApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApi(retrofit: Retrofit): NotificationApi =
+        retrofit.create(NotificationApi::class.java)
 
     @Provides
     @Singleton

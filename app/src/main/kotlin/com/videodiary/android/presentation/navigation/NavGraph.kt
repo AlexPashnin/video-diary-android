@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.videodiary.android.presentation.screens.auth.LoginScreen
 import com.videodiary.android.presentation.screens.auth.RegisterScreen
 import com.videodiary.android.presentation.screens.clipselect.ClipSelectScreen
@@ -75,7 +76,10 @@ fun NavGraph(
             }
 
             // Main tabs
-            composable(Screen.Home.route) {
+            composable(
+                route = Screen.Home.route,
+                deepLinks = listOf(navDeepLink { uriPattern = "videodiary://home" }),
+            ) {
                 HomeScreen(
                     onDayWithClipClick = { clipId ->
                         navController.navigate(Screen.Player.createRoute(clipId))
@@ -106,6 +110,7 @@ fun NavGraph(
             composable(
                 route = Screen.ClipSelect.route,
                 arguments = listOf(navArgument("videoId") { type = NavType.StringType }),
+                deepLinks = listOf(navDeepLink { uriPattern = "videodiary://clip_select/{videoId}" }),
             ) { entry ->
                 ClipSelectScreen(
                     videoId = entry.arguments?.getString("videoId").orEmpty(),
@@ -143,7 +148,10 @@ fun NavGraph(
                     onBack = { navController.popBackStack() },
                 )
             }
-            composable(Screen.CompilationHistory.route) {
+            composable(
+                route = Screen.CompilationHistory.route,
+                deepLinks = listOf(navDeepLink { uriPattern = "videodiary://compilation_history" }),
+            ) {
                 CompilationHistoryScreen(
                     onCompilationClick = { compilationId ->
                         navController.navigate(Screen.Player.createRoute(compilationId))
@@ -156,6 +164,7 @@ fun NavGraph(
             composable(
                 route = Screen.Player.route,
                 arguments = listOf(navArgument("compilationId") { type = NavType.StringType }),
+                deepLinks = listOf(navDeepLink { uriPattern = "videodiary://player/{compilationId}" }),
             ) { entry ->
                 PlayerScreen(
                     compilationId = entry.arguments?.getString("compilationId").orEmpty(),
