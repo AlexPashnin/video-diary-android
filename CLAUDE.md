@@ -12,8 +12,8 @@ A mobile-first video diary application where users upload daily videos, select a
 - ✅ Phase 4 — Video Upload Flow (Steps 10–12)
 - ✅ Phase 5 — Clip Selection (Step 13)
 - ✅ Phase 6 — Compilations (Steps 14–16)
-- ⏳ Phase 7 — Video Playback (Step 17)
-- ⏳ Phase 8 — Settings & Profile (Step 18)
+- ✅ Phase 7 — Video Playback (Step 17)
+- ✅ Phase 8 — Settings & Profile (Step 18)
 - ⏳ Phase 9 — Push Notifications (Step 19)
 - ⏳ Phase 10 — Polish & Production Readiness (Steps 20–24)
 

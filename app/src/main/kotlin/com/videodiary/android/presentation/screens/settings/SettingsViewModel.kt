@@ -3,6 +3,8 @@ package com.videodiary.android.presentation.screens.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.videodiary.android.data.local.datastore.TokenDataStore
+import com.videodiary.android.domain.model.User
+import com.videodiary.android.domain.model.WatermarkPosition
 import com.videodiary.android.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +20,12 @@ sealed interface LogoutState {
     data class Error(val message: String) : LogoutState
 }
 
+sealed interface ProfileState {
+    data object Loading : ProfileState
+    data class Loaded(val user: User) : ProfileState
+    data object Error : ProfileState
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -30,6 +38,23 @@ class SettingsViewModel @Inject constructor(
 
     private val _logoutState = MutableStateFlow<LogoutState>(LogoutState.Idle)
     val logoutState: StateFlow<LogoutState> = _logoutState.asStateFlow()
+
+    private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Loading)
+    val profileState: StateFlow<ProfileState> = _profileState.asStateFlow()
+
+    init {
+        loadProfile()
+    }
+
+    private fun loadProfile() {
+        viewModelScope.launch {
+            _profileState.value = try {
+                ProfileState.Loaded(authRepository.getCurrentUser())
+            } catch (e: Exception) {
+                ProfileState.Error
+            }
+        }
+    }
 
     fun logout() {
         viewModelScope.launch {
@@ -49,5 +74,9 @@ class SettingsViewModel @Inject constructor(
 
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch { tokenDataStore.updateNotificationsEnabled(enabled) }
+    }
+
+    fun setWatermarkPosition(position: WatermarkPosition) {
+        viewModelScope.launch { tokenDataStore.updateWatermarkPosition(position.name) }
     }
 }

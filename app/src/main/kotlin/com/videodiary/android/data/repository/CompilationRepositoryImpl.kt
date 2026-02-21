@@ -1,7 +1,9 @@
 package com.videodiary.android.data.repository
 
 import com.videodiary.android.data.remote.api.CompilationApi
+import com.videodiary.android.data.remote.api.StorageApi
 import com.videodiary.android.data.remote.dto.compilation.CreateCompilationRequest
+import com.videodiary.android.data.remote.dto.storage.PresignedDownloadRequest
 import com.videodiary.android.data.remote.mapper.toDomain
 import com.videodiary.android.domain.model.Compilation
 import com.videodiary.android.domain.model.CompilationProgress
@@ -19,6 +21,7 @@ import javax.inject.Singleton
 @Singleton
 class CompilationRepositoryImpl @Inject constructor(
     private val compilationApi: CompilationApi,
+    private val storageApi: StorageApi,
 ) : CompilationRepository {
 
     override suspend fun createCompilation(
@@ -50,6 +53,15 @@ class CompilationRepositoryImpl @Inject constructor(
         compilationApi.deleteCompilation(compilationId)
     }
 
+    override suspend fun getDownloadUrl(compilationId: String): String {
+        val compilation = compilationApi.getCompilation(compilationId)
+        val objectKey = compilation.objectKey
+            ?: error("Compilation $compilationId has no object key")
+        return storageApi.generateDownloadUrl(
+            PresignedDownloadRequest(bucket = BUCKET_COMPILATIONS, objectKey = objectKey)
+        ).url
+    }
+
     override fun observeCompilationProgress(compilationId: String): Flow<CompilationProgress> = flow {
         while (true) {
             val progress = compilationApi.getCompilationStatus(compilationId).toDomain()
@@ -61,5 +73,6 @@ class CompilationRepositoryImpl @Inject constructor(
 
     companion object {
         private const val POLL_INTERVAL_MS = 3_000L
+        private const val BUCKET_COMPILATIONS = "compilations"
     }
 }
