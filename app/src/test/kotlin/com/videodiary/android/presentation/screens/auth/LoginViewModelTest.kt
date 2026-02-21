@@ -1,5 +1,6 @@
 package com.videodiary.android.presentation.screens.auth
 
+import com.videodiary.android.domain.repository.AuthRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -14,11 +15,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import com.videodiary.android.domain.repository.AuthRepository
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LoginViewModelTest {
-
     private val testDispatcher = UnconfinedTestDispatcher()
     private val authRepository: AuthRepository = mockk()
     private lateinit var viewModel: LoginViewModel
@@ -56,44 +55,48 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun `login success emits Success state`() = runTest {
-        coEvery { authRepository.login(any(), any()) } returns mockk()
+    fun `login success emits Success state`() =
+        runTest {
+            coEvery { authRepository.login(any(), any()) } returns mockk()
 
-        viewModel.login("user@example.com", "password123")
+            viewModel.login("user@example.com", "password123")
 
-        assertEquals(LoginState.Success, viewModel.state.value)
-        coVerify(exactly = 1) { authRepository.login("user@example.com", "password123") }
-    }
-
-    @Test
-    fun `login failure emits Error state with message`() = runTest {
-        val errorMessage = "Invalid credentials"
-        coEvery { authRepository.login(any(), any()) } throws RuntimeException(errorMessage)
-
-        viewModel.login("user@example.com", "wrongpassword")
-
-        val state = viewModel.state.value
-        assertTrue(state is LoginState.Error)
-        assertEquals(errorMessage, (state as LoginState.Error).message)
-    }
+            assertEquals(LoginState.Success, viewModel.state.value)
+            coVerify(exactly = 1) { authRepository.login("user@example.com", "password123") }
+        }
 
     @Test
-    fun `login trims email whitespace before passing to repository`() = runTest {
-        coEvery { authRepository.login(any(), any()) } returns mockk()
+    fun `login failure emits Error state with message`() =
+        runTest {
+            val errorMessage = "Invalid credentials"
+            coEvery { authRepository.login(any(), any()) } throws RuntimeException(errorMessage)
 
-        viewModel.login("  user@example.com  ", "password123")
+            viewModel.login("user@example.com", "wrongpassword")
 
-        coVerify { authRepository.login("user@example.com", "password123") }
-    }
+            val state = viewModel.state.value
+            assertTrue(state is LoginState.Error)
+            assertEquals(errorMessage, (state as LoginState.Error).message)
+        }
 
     @Test
-    fun `resetState returns to Idle`() = runTest {
-        coEvery { authRepository.login(any(), any()) } returns mockk()
-        viewModel.login("user@example.com", "password123")
-        assertEquals(LoginState.Success, viewModel.state.value)
+    fun `login trims email whitespace before passing to repository`() =
+        runTest {
+            coEvery { authRepository.login(any(), any()) } returns mockk()
 
-        viewModel.resetState()
+            viewModel.login("  user@example.com  ", "password123")
 
-        assertEquals(LoginState.Idle, viewModel.state.value)
-    }
+            coVerify { authRepository.login("user@example.com", "password123") }
+        }
+
+    @Test
+    fun `resetState returns to Idle`() =
+        runTest {
+            coEvery { authRepository.login(any(), any()) } returns mockk()
+            viewModel.login("user@example.com", "password123")
+            assertEquals(LoginState.Success, viewModel.state.value)
+
+            viewModel.resetState()
+
+            assertEquals(LoginState.Idle, viewModel.state.value)
+        }
 }

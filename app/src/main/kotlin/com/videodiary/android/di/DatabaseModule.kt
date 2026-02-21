@@ -16,10 +16,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): VideoDiaryDatabase =
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+    ): VideoDiaryDatabase =
         Room.databaseBuilder(context, VideoDiaryDatabase::class.java, "videodiary.db")
             .fallbackToDestructiveMigration()
             .build()

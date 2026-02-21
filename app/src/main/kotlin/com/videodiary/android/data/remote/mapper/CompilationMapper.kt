@@ -10,28 +10,30 @@ import com.videodiary.android.domain.model.WatermarkPosition
 import java.time.Instant
 import java.time.LocalDate
 
-fun CompilationResponseDto.toDomain(): Compilation = Compilation(
-    id = id,
-    userId = userId,
-    startDate = LocalDate.parse(startDate),
-    endDate = LocalDate.parse(endDate),
-    status = CompilationStatus.valueOf(status),
-    quality = QualityOption.valueOf(quality),
-    watermarkPosition = WatermarkPosition.valueOf(watermarkPosition),
-    clipCount = clipCount,
-    clipIds = clipIds,
-    objectKey = objectKey,
-    fileSizeBytes = fileSizeBytes,
-    durationSeconds = durationSeconds,
-    expiresAt = expiresAt?.let { Instant.parse(it) },
-    createdAt = Instant.parse(createdAt),
-    updatedAt = Instant.parse(updatedAt),
-)
+fun CompilationResponseDto.toDomain(): Compilation =
+    Compilation(
+        id = id,
+        userId = userId,
+        startDate = LocalDate.parse(startDate),
+        endDate = LocalDate.parse(endDate),
+        status = CompilationStatus.valueOf(status),
+        quality = QualityOption.valueOf(quality),
+        watermarkPosition = WatermarkPosition.valueOf(watermarkPosition),
+        clipCount = clipCount,
+        clipIds = clipIds,
+        objectKey = objectKey,
+        fileSizeBytes = fileSizeBytes,
+        durationSeconds = durationSeconds,
+        expiresAt = expiresAt?.let { Instant.parse(it) },
+        createdAt = Instant.parse(createdAt),
+        updatedAt = Instant.parse(updatedAt),
+    )
 
-fun CompilationStatusResponseDto.toDomain(): CompilationProgress = CompilationProgress(
-    id = id,
-    status = CompilationStatus.valueOf(status),
-    clipCount = clipCount,
-    currentClip = currentClip,
-    percentComplete = percentComplete,
-)
+fun CompilationStatusResponseDto.toDomain(): CompilationProgress =
+    CompilationProgress(
+        id = id,
+        status = CompilationStatus.valueOf(status),
+        clipCount = clipCount,
+        currentClip = currentClip,
+        percentComplete = percentComplete,
+    )

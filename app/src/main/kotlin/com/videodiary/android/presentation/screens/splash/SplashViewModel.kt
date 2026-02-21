@@ -12,30 +12,34 @@ import javax.inject.Inject
 
 sealed interface AuthState {
     data object Loading : AuthState
+
     data object Authenticated : AuthState
+
     data object Unauthenticated : AuthState
 }
 
 @HiltViewModel
-class SplashViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-) : ViewModel() {
+class SplashViewModel
+    @Inject
+    constructor(
+        private val authRepository: AuthRepository,
+    ) : ViewModel() {
+        private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
+        val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
-    val authState: StateFlow<AuthState> = _authState.asStateFlow()
+        init {
+            checkAuthState()
+        }
 
-    init {
-        checkAuthState()
-    }
-
-    private fun checkAuthState() {
-        viewModelScope.launch {
-            _authState.value = when {
-                authRepository.isLoggedIn() -> AuthState.Authenticated
-                // Token exists but expired — attempt silent refresh
-                authRepository.refreshToken() -> AuthState.Authenticated
-                else -> AuthState.Unauthenticated
+        private fun checkAuthState() {
+            viewModelScope.launch {
+                _authState.value =
+                    when {
+                        authRepository.isLoggedIn() -> AuthState.Authenticated
+                        // Token exists but expired — attempt silent refresh
+                        authRepository.refreshToken() -> AuthState.Authenticated
+                        else -> AuthState.Unauthenticated
+                    }
             }
         }
     }
-}

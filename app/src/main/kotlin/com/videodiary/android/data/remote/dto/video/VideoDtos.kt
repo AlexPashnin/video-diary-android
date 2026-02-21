@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class InitiateUploadRequest(
-    val date: String, // ISO date: yyyy-MM-dd
+    // ISO date: yyyy-MM-dd
+    val date: String,
 )
 
 @Serializable

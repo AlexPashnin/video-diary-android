@@ -20,12 +20,13 @@ private data class BottomNavItem(
     val route: String,
 )
 
-private val bottomNavItems = listOf(
-    BottomNavItem("Home", Icons.Default.CalendarMonth, Screen.Home.route),
-    BottomNavItem("Upload", Icons.Default.VideoCall, Screen.Upload.route),
-    BottomNavItem("Compilations", Icons.Default.Movie, Screen.CompilationHistory.route),
-    BottomNavItem("Settings", Icons.Default.Settings, Screen.Settings.route),
-)
+private val bottomNavItems =
+    listOf(
+        BottomNavItem("Home", Icons.Default.CalendarMonth, Screen.Home.route),
+        BottomNavItem("Upload", Icons.Default.VideoCall, Screen.Upload.route),
+        BottomNavItem("Compilations", Icons.Default.Movie, Screen.CompilationHistory.route),
+        BottomNavItem("Settings", Icons.Default.Settings, Screen.Settings.route),
+    )
 
 @Composable
 fun BottomNavBar(navController: NavController) {

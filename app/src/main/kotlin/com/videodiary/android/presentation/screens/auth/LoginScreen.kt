@@ -60,11 +60,12 @@ fun LoginScreen(
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp)
-                .imePadding(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+                    .imePadding(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -85,10 +86,11 @@ fun LoginScreen(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next,
-                ),
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next,
+                    ),
                 keyboardActions = KeyboardActions(onNext = { passwordFocus.requestFocus() }),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -99,15 +101,17 @@ fun LoginScreen(
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                ),
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done,
+                    ),
                 keyboardActions = KeyboardActions(onDone = { viewModel.login(email, password) }),
                 singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(passwordFocus),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .focusRequester(passwordFocus),
             )
             Spacer(Modifier.height(24.dp))
 
@@ -126,4 +130,3 @@ fun LoginScreen(
         }
     }
 }
-

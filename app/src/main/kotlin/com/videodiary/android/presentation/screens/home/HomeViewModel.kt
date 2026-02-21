@@ -23,45 +23,47 @@ data class HomeUiState(
 )
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
-    private val clipRepository: ClipRepository,
-) : ViewModel() {
-
-    companion object {
-        const val INITIAL_PAGE = 1200
-        private val BASE_YEAR_MONTH: YearMonth = YearMonth.now()
-    }
-
-    fun yearMonthForPage(page: Int): YearMonth =
-        BASE_YEAR_MONTH.plusMonths((page - INITIAL_PAGE).toLong())
-
-    private val _currentPage = MutableStateFlow(INITIAL_PAGE)
-
-    val calendarState: StateFlow<HomeUiState> = _currentPage
-        .flatMapLatest { page ->
-            val ym = yearMonthForPage(page)
-            // Fire-and-forget network refresh; Room updates the Flow automatically
-            viewModelScope.launch {
-                runCatching { clipRepository.getCalendar(ym.year, ym.monthValue) }
-            }
-            clipRepository.observeCalendar(ym.year, ym.monthValue)
-                .map { month ->
-                    HomeUiState(
-                        isLoading = false,
-                        calendarMonth = month.takeIf { it.days.isNotEmpty() },
-                    )
-                }
-                .catch { e ->
-                    emit(HomeUiState(isLoading = false, error = e.message ?: "Failed to load calendar"))
-                }
+class HomeViewModel
+    @Inject
+    constructor(
+        private val clipRepository: ClipRepository,
+    ) : ViewModel() {
+        companion object {
+            const val INITIAL_PAGE = 1200
+            private val BASE_YEAR_MONTH: YearMonth = YearMonth.now()
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = HomeUiState(isLoading = true),
-        )
 
-    fun onPageSettled(page: Int) {
-        _currentPage.value = page
+        fun yearMonthForPage(page: Int): YearMonth = BASE_YEAR_MONTH.plusMonths((page - INITIAL_PAGE).toLong())
+
+        @Suppress("PropertyName")
+        private val _currentPage = MutableStateFlow(INITIAL_PAGE)
+
+        val calendarState: StateFlow<HomeUiState> =
+            _currentPage
+                .flatMapLatest { page ->
+                    val ym = yearMonthForPage(page)
+                    // Fire-and-forget network refresh; Room updates the Flow automatically
+                    viewModelScope.launch {
+                        runCatching { clipRepository.getCalendar(ym.year, ym.monthValue) }
+                    }
+                    clipRepository.observeCalendar(ym.year, ym.monthValue)
+                        .map { month ->
+                            HomeUiState(
+                                isLoading = false,
+                                calendarMonth = month.takeIf { it.days.isNotEmpty() },
+                            )
+                        }
+                        .catch { e ->
+                            emit(HomeUiState(isLoading = false, error = e.message ?: "Failed to load calendar"))
+                        }
+                }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5_000),
+                    initialValue = HomeUiState(isLoading = true),
+                )
+
+        fun onPageSettled(page: Int) {
+            _currentPage.value = page
+        }
     }
-}

@@ -18,9 +18,17 @@ interface CompilationRepository {
     ): Compilation
 
     suspend fun getCompilation(compilationId: String): Compilation
+
     suspend fun getCompilationStatus(compilationId: String): CompilationProgress
-    suspend fun listCompilations(status: CompilationStatus? = null, page: Int = 0): List<Compilation>
+
+    suspend fun listCompilations(
+        status: CompilationStatus? = null,
+        page: Int = 0,
+    ): List<Compilation>
+
     suspend fun deleteCompilation(compilationId: String)
+
     fun observeCompilationProgress(compilationId: String): Flow<CompilationProgress>
+
     suspend fun getDownloadUrl(compilationId: String): String
 }

@@ -27,12 +27,13 @@ import com.videodiary.android.presentation.screens.settings.SettingsScreen
 import com.videodiary.android.presentation.screens.upload.RecordScreen
 import com.videodiary.android.presentation.screens.upload.UploadScreen
 
-private val bottomNavRoutes = setOf(
-    Screen.Home.route,
-    Screen.Upload.route,
-    Screen.CompilationHistory.route,
-    Screen.Settings.route,
-)
+private val bottomNavRoutes =
+    setOf(
+        Screen.Home.route,
+        Screen.Upload.route,
+        Screen.CompilationHistory.route,
+        Screen.Settings.route,
+    )
 
 @Composable
 fun NavGraph(
@@ -51,7 +52,7 @@ fun NavGraph(
             if (showBottomBar) {
                 BottomNavBar(navController)
             }
-        }
+        },
     ) { innerPadding ->
         NavHost(
             navController = navController,

@@ -14,34 +14,47 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class NetworkConnectivityObserver @Inject constructor(
-    @ApplicationContext private val context: Context,
-) {
-    private val connectivityManager =
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+class NetworkConnectivityObserver
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        private val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-    val isOnline: Flow<Boolean> = callbackFlow {
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) { trySend(true) }
-            override fun onLost(network: Network) { trySend(hasActiveNetwork()) }
-            override fun onUnavailable() { trySend(false) }
-        }
+        val isOnline: Flow<Boolean> =
+            callbackFlow {
+                val callback =
+                    object : ConnectivityManager.NetworkCallback() {
+                        override fun onAvailable(network: Network) {
+                            trySend(true)
+                        }
 
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
+                        override fun onLost(network: Network) {
+                            trySend(hasActiveNetwork())
+                        }
 
-        connectivityManager.registerNetworkCallback(request, callback)
+                        override fun onUnavailable() {
+                            trySend(false)
+                        }
+                    }
 
-        // Emit current connectivity state immediately
-        trySend(hasActiveNetwork())
+                val request =
+                    NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build()
 
-        awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
-    }.distinctUntilChanged()
+                connectivityManager.registerNetworkCallback(request, callback)
 
-    private fun hasActiveNetwork(): Boolean =
-        connectivityManager.activeNetwork?.let { network ->
-            connectivityManager.getNetworkCapabilities(network)
-                ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        } ?: false
-}
+                // Emit current connectivity state immediately
+                trySend(hasActiveNetwork())
+
+                awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
+            }.distinctUntilChanged()
+
+        private fun hasActiveNetwork(): Boolean =
+            connectivityManager.activeNetwork?.let { network ->
+                connectivityManager.getNetworkCapabilities(network)
+                    ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            } ?: false
+    }

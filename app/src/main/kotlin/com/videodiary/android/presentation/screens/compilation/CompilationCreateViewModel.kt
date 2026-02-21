@@ -40,100 +40,107 @@ data class CompilationCreateState(
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
-class CompilationCreateViewModel @Inject constructor(
-    private val createCompilationUseCase: CreateCompilationUseCase,
-    private val clipRepository: ClipRepository,
-) : ViewModel() {
+class CompilationCreateViewModel
+    @Inject
+    constructor(
+        private val createCompilationUseCase: CreateCompilationUseCase,
+        private val clipRepository: ClipRepository,
+    ) : ViewModel() {
+        private val _state = MutableStateFlow(CompilationCreateState())
+        val state: StateFlow<CompilationCreateState> = _state.asStateFlow()
 
-    private val _state = MutableStateFlow(CompilationCreateState())
-    val state: StateFlow<CompilationCreateState> = _state.asStateFlow()
+        init {
+            // Auto-load clip IDs when date range changes
+            _state
+                .map { it.startDate to it.endDate }
+                .distinctUntilChanged()
+                .debounce(400)
+                .flatMapLatest { (start, end) ->
+                    if (!end.isBefore(start)) {
+                        _state.update { it.copy(isLoadingClips = true, clipIds = emptyList()) }
+                        flow {
+                            emit(loadClipsForRange(start, end))
+                        }.catch { emit(emptyList()) }
+                    } else {
+                        flowOf(emptyList())
+                    }
+                }
+                .onEach { ids ->
+                    _state.update { it.copy(clipIds = ids, isLoadingClips = false) }
+                }
+                .launchIn(viewModelScope)
+        }
 
-    init {
-        // Auto-load clip IDs when date range changes
-        _state
-            .map { it.startDate to it.endDate }
-            .distinctUntilChanged()
-            .debounce(400)
-            .flatMapLatest { (start, end) ->
-                if (!end.isBefore(start)) {
-                    _state.update { it.copy(isLoadingClips = true, clipIds = emptyList()) }
-                    flow {
-                        emit(loadClipsForRange(start, end))
-                    }.catch { emit(emptyList()) }
-                } else {
-                    flowOf(emptyList())
+        fun setStartDate(date: LocalDate) {
+            _state.update { s ->
+                val end = if (date.isAfter(s.endDate)) date else s.endDate
+                s.copy(startDate = date, endDate = end)
+            }
+        }
+
+        fun setEndDate(date: LocalDate) {
+            _state.update { s ->
+                val start = if (date.isBefore(s.startDate)) date else s.startDate
+                s.copy(startDate = start, endDate = date)
+            }
+        }
+
+        fun setQuality(quality: QualityOption) {
+            _state.update { it.copy(quality = quality) }
+        }
+
+        fun setWatermarkPosition(position: WatermarkPosition) {
+            _state.update { it.copy(watermarkPosition = position) }
+        }
+
+        fun createCompilation() {
+            val s = _state.value
+            if (s.clipIds.isEmpty()) {
+                _state.update { it.copy(error = "No clips found in selected date range.") }
+                return
+            }
+            viewModelScope.launch {
+                _state.update { it.copy(isCreating = true, error = null) }
+                try {
+                    val compilation =
+                        createCompilationUseCase(
+                            startDate = s.startDate,
+                            endDate = s.endDate,
+                            quality = s.quality,
+                            watermarkPosition = s.watermarkPosition,
+                            clipIds = s.clipIds,
+                        )
+                    _state.update { it.copy(isCreating = false, createdId = compilation.id) }
+                } catch (e: Exception) {
+                    _state.update {
+                        it.copy(isCreating = false, error = e.message ?: "Failed to create compilation")
+                    }
                 }
             }
-            .onEach { ids ->
-                _state.update { it.copy(clipIds = ids, isLoadingClips = false) }
+        }
+
+        fun dismissError() {
+            _state.update { it.copy(error = null) }
+        }
+
+        private suspend fun loadClipsForRange(
+            start: LocalDate,
+            end: LocalDate,
+        ): List<String> {
+            val clipIds = mutableListOf<String>()
+            var current = YearMonth.of(start.year, start.month)
+            val endMonth = YearMonth.of(end.year, end.month)
+            while (!current.isAfter(endMonth)) {
+                val calendar = clipRepository.getCalendar(current.year, current.monthValue)
+                calendar.days
+                    .filter {
+                        it.hasClip && it.clipId != null &&
+                            !it.date.isBefore(start) && !it.date.isAfter(end)
+                    }
+                    .mapNotNull { it.clipId }
+                    .let { clipIds.addAll(it) }
+                current = current.plusMonths(1)
             }
-            .launchIn(viewModelScope)
-    }
-
-    fun setStartDate(date: LocalDate) {
-        _state.update { s ->
-            val end = if (date.isAfter(s.endDate)) date else s.endDate
-            s.copy(startDate = date, endDate = end)
+            return clipIds
         }
     }
-
-    fun setEndDate(date: LocalDate) {
-        _state.update { s ->
-            val start = if (date.isBefore(s.startDate)) date else s.startDate
-            s.copy(startDate = start, endDate = date)
-        }
-    }
-
-    fun setQuality(quality: QualityOption) {
-        _state.update { it.copy(quality = quality) }
-    }
-
-    fun setWatermarkPosition(position: WatermarkPosition) {
-        _state.update { it.copy(watermarkPosition = position) }
-    }
-
-    fun createCompilation() {
-        val s = _state.value
-        if (s.clipIds.isEmpty()) {
-            _state.update { it.copy(error = "No clips found in selected date range.") }
-            return
-        }
-        viewModelScope.launch {
-            _state.update { it.copy(isCreating = true, error = null) }
-            try {
-                val compilation = createCompilationUseCase(
-                    startDate = s.startDate,
-                    endDate = s.endDate,
-                    quality = s.quality,
-                    watermarkPosition = s.watermarkPosition,
-                    clipIds = s.clipIds,
-                )
-                _state.update { it.copy(isCreating = false, createdId = compilation.id) }
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(isCreating = false, error = e.message ?: "Failed to create compilation")
-                }
-            }
-        }
-    }
-
-    fun dismissError() {
-        _state.update { it.copy(error = null) }
-    }
-
-    private suspend fun loadClipsForRange(start: LocalDate, end: LocalDate): List<String> {
-        val clipIds = mutableListOf<String>()
-        var current = YearMonth.of(start.year, start.month)
-        val endMonth = YearMonth.of(end.year, end.month)
-        while (!current.isAfter(endMonth)) {
-            val calendar = clipRepository.getCalendar(current.year, current.monthValue)
-            calendar.days
-                .filter { it.hasClip && it.clipId != null &&
-                    !it.date.isBefore(start) && !it.date.isAfter(end) }
-                .mapNotNull { it.clipId }
-                .let { clipIds.addAll(it) }
-            current = current.plusMonths(1)
-        }
-        return clipIds
-    }
-}

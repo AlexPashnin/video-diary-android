@@ -12,14 +12,14 @@ import javax.inject.Inject
 
 @HiltAndroidApp
 class VideoDiaryApp : Application(), Configuration.Provider {
-
     @Inject
     lateinit var workerFactory: androidx.hilt.work.HiltWorkerFactory
 
     override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
+        get() =
+            Configuration.Builder()
+                .setWorkerFactory(workerFactory)
+                .build()
 
     override fun onCreate() {
         super.onCreate()
@@ -29,13 +29,14 @@ class VideoDiaryApp : Application(), Configuration.Provider {
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            VideoDiaryFirebaseMessagingService.CHANNEL_ID,
-            VideoDiaryFirebaseMessagingService.CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_DEFAULT,
-        ).apply {
-            description = "Processing updates for videos, clips, and compilations"
-        }
+        val channel =
+            NotificationChannel(
+                VideoDiaryFirebaseMessagingService.CHANNEL_ID,
+                VideoDiaryFirebaseMessagingService.CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                description = "Processing updates for videos, clips, and compilations"
+            }
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
     }

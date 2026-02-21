@@ -8,19 +8,22 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-class PollClipReadyUseCase @Inject constructor(
-    private val clipRepository: ClipRepository,
-) {
-    operator fun invoke(clipId: String): Flow<Clip> = flow {
-        while (true) {
-            val clip = clipRepository.getClip(clipId)
-            emit(clip)
-            if (clip.status == ClipStatus.READY || clip.status == ClipStatus.FAILED) break
-            delay(POLL_INTERVAL_MS)
+class PollClipReadyUseCase
+    @Inject
+    constructor(
+        private val clipRepository: ClipRepository,
+    ) {
+        operator fun invoke(clipId: String): Flow<Clip> =
+            flow {
+                while (true) {
+                    val clip = clipRepository.getClip(clipId)
+                    emit(clip)
+                    if (clip.status == ClipStatus.READY || clip.status == ClipStatus.FAILED) break
+                    delay(POLL_INTERVAL_MS)
+                }
+            }
+
+        companion object {
+            private const val POLL_INTERVAL_MS = 3_000L
         }
     }
-
-    companion object {
-        private const val POLL_INTERVAL_MS = 3_000L
-    }
-}

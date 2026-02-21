@@ -16,13 +16,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
-
     @Provides
     @Singleton
     fun provideUserPreferencesDataStore(
         @ApplicationContext context: Context,
-    ): DataStore<UserPreferences> = DataStoreFactory.create(
-        serializer = UserPreferencesSerializer,
-        produceFile = { context.dataStoreFile("user_preferences.pb") },
-    )
+    ): DataStore<UserPreferences> =
+        DataStoreFactory.create(
+            serializer = UserPreferencesSerializer,
+            produceFile = { context.dataStoreFile("user_preferences.pb") },
+        )
 }

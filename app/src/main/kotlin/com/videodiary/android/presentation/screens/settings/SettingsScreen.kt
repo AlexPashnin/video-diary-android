@@ -61,10 +61,11 @@ fun SettingsScreen(
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle(initialValue = true)
     val watermarkPositionName by viewModel.watermarkPosition.collectAsStateWithLifecycle(initialValue = "")
 
-    val currentWatermark = remember(watermarkPositionName) {
-        WatermarkPosition.entries.firstOrNull { it.name == watermarkPositionName }
-            ?: WatermarkPosition.BOTTOM_RIGHT
-    }
+    val currentWatermark =
+        remember(watermarkPositionName) {
+            WatermarkPosition.entries.firstOrNull { it.name == watermarkPositionName }
+                ?: WatermarkPosition.BOTTOM_RIGHT
+        }
 
     var showLogoutConfirm by remember { mutableStateOf(false) }
 
@@ -82,7 +83,7 @@ fun SettingsScreen(
                     onClick = {
                         showLogoutConfirm = false
                         viewModel.logout()
-                    }
+                    },
                 ) { Text("Sign out") }
             },
             dismissButton = {
@@ -92,22 +93,24 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Settings") }) }
+        topBar = { TopAppBar(title = { Text("Settings") }) },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState()),
         ) {
             // Profile section
             SectionLabel("Profile")
             when (val ps = profileState) {
                 is ProfileState.Loading -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(80.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         InlineLoadingIndicator()
@@ -167,13 +170,15 @@ fun SettingsScreen(
             Button(
                 onClick = { showLogoutConfirm = true },
                 enabled = logoutState !is LogoutState.Loading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
             ) {
                 if (logoutState is LogoutState.Loading) {
                     InlineLoadingIndicator()
@@ -198,9 +203,10 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
             )
         }
     }
@@ -219,18 +225,20 @@ private fun SectionLabel(text: String) {
 @Composable
 private fun ProfileCard(user: User) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Avatar: initials circle
         Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+            modifier =
+                Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -260,23 +268,27 @@ private fun ProfileCard(user: User) {
 
 @Composable
 private fun TierBadge(tier: UserTier) {
-    val (label, containerColor, contentColor) = when (tier) {
-        UserTier.FREE -> Triple(
-            "Free",
-            MaterialTheme.colorScheme.surfaceVariant,
-            MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        UserTier.PREMIUM -> Triple(
-            "Premium",
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.onPrimaryContainer,
-        )
-        UserTier.ENTERPRISE -> Triple(
-            "Enterprise",
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.onTertiaryContainer,
-        )
-    }
+    val (label, containerColor, contentColor) =
+        when (tier) {
+            UserTier.FREE ->
+                Triple(
+                    "Free",
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            UserTier.PREMIUM ->
+                Triple(
+                    "Premium",
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            UserTier.ENTERPRISE ->
+                Triple(
+                    "Enterprise",
+                    MaterialTheme.colorScheme.tertiaryContainer,
+                    MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+        }
     Surface(
         shape = MaterialTheme.shapes.extraSmall,
         color = containerColor,
@@ -297,10 +309,11 @@ private fun WatermarkPositionPicker(
     modifier: Modifier = Modifier,
 ) {
     // Visual 3×2 grid mirroring the actual video corners/edges
-    val rows = listOf(
-        listOf(WatermarkPosition.TOP_LEFT, WatermarkPosition.CENTER_TOP, WatermarkPosition.TOP_RIGHT),
-        listOf(WatermarkPosition.BOTTOM_LEFT, WatermarkPosition.CENTER_BOTTOM, WatermarkPosition.BOTTOM_RIGHT),
-    )
+    val rows =
+        listOf(
+            listOf(WatermarkPosition.TOP_LEFT, WatermarkPosition.CENTER_TOP, WatermarkPosition.TOP_RIGHT),
+            listOf(WatermarkPosition.BOTTOM_LEFT, WatermarkPosition.CENTER_BOTTOM, WatermarkPosition.BOTTOM_RIGHT),
+        )
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         rows.forEach { row ->
@@ -312,20 +325,33 @@ private fun WatermarkPositionPicker(
                     val isSelected = position == selected
                     Surface(
                         shape = MaterialTheme.shapes.small,
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                                       else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .weight(1f)
-                            .then(
-                                if (isSelected) Modifier.border(
-                                    2.dp,
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.shapes.small,
-                                ) else Modifier
-                            )
-                            .clickable { onSelect(position) },
+                        color =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                        contentColor =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .then(
+                                    if (isSelected) {
+                                        Modifier.border(
+                                            2.dp,
+                                            MaterialTheme.colorScheme.primary,
+                                            MaterialTheme.shapes.small,
+                                        )
+                                    } else {
+                                        Modifier
+                                    },
+                                )
+                                .clickable { onSelect(position) },
                     ) {
                         Text(
                             text = position.label,
@@ -341,11 +367,12 @@ private fun WatermarkPositionPicker(
 }
 
 private val WatermarkPosition.label: String
-    get() = when (this) {
-        WatermarkPosition.TOP_LEFT -> "Top\nLeft"
-        WatermarkPosition.TOP_RIGHT -> "Top\nRight"
-        WatermarkPosition.BOTTOM_LEFT -> "Bottom\nLeft"
-        WatermarkPosition.BOTTOM_RIGHT -> "Bottom\nRight"
-        WatermarkPosition.CENTER_TOP -> "Center\nTop"
-        WatermarkPosition.CENTER_BOTTOM -> "Center\nBottom"
-    }
+    get() =
+        when (this) {
+            WatermarkPosition.TOP_LEFT -> "Top\nLeft"
+            WatermarkPosition.TOP_RIGHT -> "Top\nRight"
+            WatermarkPosition.BOTTOM_LEFT -> "Bottom\nLeft"
+            WatermarkPosition.BOTTOM_RIGHT -> "Bottom\nRight"
+            WatermarkPosition.CENTER_TOP -> "Center\nTop"
+            WatermarkPosition.CENTER_BOTTOM -> "Center\nBottom"
+        }

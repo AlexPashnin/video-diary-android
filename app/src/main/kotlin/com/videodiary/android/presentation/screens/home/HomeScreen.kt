@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +46,6 @@ import com.videodiary.android.domain.model.CalendarDay
 import com.videodiary.android.domain.model.CalendarMonth
 import com.videodiary.android.domain.model.ClipStatus
 import com.videodiary.android.presentation.common.LoadingIndicator
-import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -65,10 +65,11 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val today = remember { LocalDate.now() }
 
-    val pagerState = rememberPagerState(
-        initialPage = HomeViewModel.INITIAL_PAGE,
-        pageCount = { 2400 },
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = HomeViewModel.INITIAL_PAGE,
+            pageCount = { 2400 },
+        )
 
     // Tell the ViewModel which month the user has settled on
     LaunchedEffect(pagerState) {
@@ -116,17 +117,19 @@ fun HomeScreen(
         },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             WeekDayHeader()
 
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
             ) { page ->
                 val ym = viewModel.yearMonthForPage(page)
                 // Only pass loaded data to the settled page; adjacent pages show structure only
@@ -156,9 +159,10 @@ fun HomeScreen(
 @Composable
 private fun WeekDayHeader() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 4.dp),
     ) {
         listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su").forEach { label ->
             Text(
@@ -192,15 +196,17 @@ private fun CalendarMonthPage(
     val totalRows = (totalCells + 6) / 7 // ceiling division
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 4.dp, vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
     ) {
         repeat(totalRows) { row ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
             ) {
                 repeat(7) { col ->
                     val cellIndex = row * 7 + col
@@ -238,36 +244,49 @@ private fun CalendarDayCell(
     val clipExtracting = dayData?.hasClip == true && dayData.clipStatus == ClipStatus.EXTRACTING
     val isClickable = clipReady || isToday
 
-    val numberColor = when {
-        clipReady -> MaterialTheme.colorScheme.onPrimaryContainer
-        isToday -> MaterialTheme.colorScheme.onSurface
-        isFuture -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
-        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
-    }
+    val numberColor =
+        when {
+            clipReady -> MaterialTheme.colorScheme.onPrimaryContainer
+            isToday -> MaterialTheme.colorScheme.onSurface
+            isFuture -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+        }
 
     Box(
-        modifier = modifier
-            .aspectRatio(1f)
-            .padding(2.dp)
-            .then(
-                if (clipReady) Modifier.background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.small,
-                ) else Modifier
-            )
-            .then(
-                if (isToday) Modifier.border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = MaterialTheme.shapes.small,
-                ) else Modifier
-            )
-            .then(
-                if (isClickable) Modifier
-                    .clip(MaterialTheme.shapes.small)
-                    .clickable(onClick = onClick)
-                else Modifier
-            ),
+        modifier =
+            modifier
+                .aspectRatio(1f)
+                .padding(2.dp)
+                .then(
+                    if (clipReady) {
+                        Modifier.background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialTheme.shapes.small,
+                        )
+                    } else {
+                        Modifier
+                    },
+                )
+                .then(
+                    if (isToday) {
+                        Modifier.border(
+                            width = 2.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = MaterialTheme.shapes.small,
+                        )
+                    } else {
+                        Modifier
+                    },
+                )
+                .then(
+                    if (isClickable) {
+                        Modifier
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable(onClick = onClick)
+                    } else {
+                        Modifier
+                    },
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -283,23 +302,25 @@ private fun CalendarDayCell(
             // Clip indicator — always reserve the space to keep cell height stable
             Spacer(Modifier.height(3.dp))
             Box(
-                modifier = Modifier
-                    .size(5.dp)
-                    .then(
-                        when {
-                            clipReady -> Modifier.background(
-                                MaterialTheme.colorScheme.primary,
-                                CircleShape,
-                            )
-                            clipExtracting -> Modifier.background(
-                                MaterialTheme.colorScheme.outline,
-                                CircleShape,
-                            )
-                            else -> Modifier
-                        }
-                    ),
+                modifier =
+                    Modifier
+                        .size(5.dp)
+                        .then(
+                            when {
+                                clipReady ->
+                                    Modifier.background(
+                                        MaterialTheme.colorScheme.primary,
+                                        CircleShape,
+                                    )
+                                clipExtracting ->
+                                    Modifier.background(
+                                        MaterialTheme.colorScheme.outline,
+                                        CircleShape,
+                                    )
+                                else -> Modifier
+                            },
+                        ),
             )
         }
     }
 }
-

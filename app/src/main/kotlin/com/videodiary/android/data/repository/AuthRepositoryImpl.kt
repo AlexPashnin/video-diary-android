@@ -15,47 +15,20 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AuthRepositoryImpl @Inject constructor(
-    private val authApi: AuthApi,
-    private val tokenDataStore: TokenDataStore,
-    private val videoDao: VideoDao,
-    private val clipDao: ClipDao,
-    private val calendarDayDao: CalendarDayDao,
-) : AuthRepository {
-
-    override suspend fun login(email: String, password: String): User {
-        val response = authApi.login(LoginRequest(email, password))
-        tokenDataStore.saveTokens(
-            accessToken = response.accessToken,
-            refreshToken = response.refreshToken,
-            expiresIn = response.expiresIn,
-            userId = response.user.id,
-            userTier = response.user.tier,
-        )
-        return response.user.toDomain()
-    }
-
-    override suspend fun register(
-        email: String,
-        password: String,
-        displayName: String,
-        timezone: String?,
-    ): User {
-        val response = authApi.register(RegisterRequest(email, password, displayName, timezone))
-        tokenDataStore.saveTokens(
-            accessToken = response.accessToken,
-            refreshToken = response.refreshToken,
-            expiresIn = response.expiresIn,
-            userId = response.user.id,
-            userTier = response.user.tier,
-        )
-        return response.user.toDomain()
-    }
-
-    override suspend fun refreshToken(): Boolean {
-        val refreshToken = tokenDataStore.getRefreshToken() ?: return false
-        return try {
-            val response = authApi.refresh(RefreshRequest(refreshToken))
+class AuthRepositoryImpl
+    @Inject
+    constructor(
+        private val authApi: AuthApi,
+        private val tokenDataStore: TokenDataStore,
+        private val videoDao: VideoDao,
+        private val clipDao: ClipDao,
+        private val calendarDayDao: CalendarDayDao,
+    ) : AuthRepository {
+        override suspend fun login(
+            email: String,
+            password: String,
+        ): User {
+            val response = authApi.login(LoginRequest(email, password))
             tokenDataStore.saveTokens(
                 accessToken = response.accessToken,
                 refreshToken = response.refreshToken,
@@ -63,28 +36,59 @@ class AuthRepositoryImpl @Inject constructor(
                 userId = response.user.id,
                 userTier = response.user.tier,
             )
-            true
-        } catch (e: Exception) {
-            false
+            return response.user.toDomain()
+        }
+
+        override suspend fun register(
+            email: String,
+            password: String,
+            displayName: String,
+            timezone: String?,
+        ): User {
+            val response = authApi.register(RegisterRequest(email, password, displayName, timezone))
+            tokenDataStore.saveTokens(
+                accessToken = response.accessToken,
+                refreshToken = response.refreshToken,
+                expiresIn = response.expiresIn,
+                userId = response.user.id,
+                userTier = response.user.tier,
+            )
+            return response.user.toDomain()
+        }
+
+        override suspend fun refreshToken(): Boolean {
+            val refreshToken = tokenDataStore.getRefreshToken() ?: return false
+            return try {
+                val response = authApi.refresh(RefreshRequest(refreshToken))
+                tokenDataStore.saveTokens(
+                    accessToken = response.accessToken,
+                    refreshToken = response.refreshToken,
+                    expiresIn = response.expiresIn,
+                    userId = response.user.id,
+                    userTier = response.user.tier,
+                )
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        override suspend fun logout() {
+            try {
+                authApi.logout()
+            } finally {
+                // Clear tokens and all locally cached data regardless of API result
+                tokenDataStore.clearTokens()
+                videoDao.deleteAll()
+                clipDao.deleteAll()
+                calendarDayDao.deleteAll()
+            }
+        }
+
+        override suspend fun getCurrentUser(): User = authApi.me().toDomain()
+
+        override suspend fun isLoggedIn(): Boolean {
+            val token = tokenDataStore.getAccessToken() ?: return false
+            return token.isNotBlank() && !tokenDataStore.isTokenExpired()
         }
     }
-
-    override suspend fun logout() {
-        try {
-            authApi.logout()
-        } finally {
-            // Clear tokens and all locally cached data regardless of API result
-            tokenDataStore.clearTokens()
-            videoDao.deleteAll()
-            clipDao.deleteAll()
-            calendarDayDao.deleteAll()
-        }
-    }
-
-    override suspend fun getCurrentUser(): User = authApi.me().toDomain()
-
-    override suspend fun isLoggedIn(): Boolean {
-        val token = tokenDataStore.getAccessToken() ?: return false
-        return token.isNotBlank() && !tokenDataStore.isTokenExpired()
-    }
-}

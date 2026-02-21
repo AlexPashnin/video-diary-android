@@ -20,46 +20,47 @@ data class CompilationHistoryState(
 )
 
 @HiltViewModel
-class CompilationHistoryViewModel @Inject constructor(
-    private val listCompilationsUseCase: ListCompilationsUseCase,
-    private val deleteCompilationUseCase: DeleteCompilationUseCase,
-) : ViewModel() {
+class CompilationHistoryViewModel
+    @Inject
+    constructor(
+        private val listCompilationsUseCase: ListCompilationsUseCase,
+        private val deleteCompilationUseCase: DeleteCompilationUseCase,
+    ) : ViewModel() {
+        private val _state = MutableStateFlow(CompilationHistoryState())
+        val state: StateFlow<CompilationHistoryState> = _state.asStateFlow()
 
-    private val _state = MutableStateFlow(CompilationHistoryState())
-    val state: StateFlow<CompilationHistoryState> = _state.asStateFlow()
+        init {
+            loadCompilations()
+        }
 
-    init {
-        loadCompilations()
-    }
-
-    fun loadCompilations() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-            try {
-                val compilations = listCompilationsUseCase()
-                _state.update { it.copy(isLoading = false, compilations = compilations) }
-            } catch (e: Exception) {
-                _state.update {
-                    it.copy(isLoading = false, error = e.message ?: "Failed to load compilations")
+        fun loadCompilations() {
+            viewModelScope.launch {
+                _state.update { it.copy(isLoading = true, error = null) }
+                try {
+                    val compilations = listCompilationsUseCase()
+                    _state.update { it.copy(isLoading = false, compilations = compilations) }
+                } catch (e: Exception) {
+                    _state.update {
+                        it.copy(isLoading = false, error = e.message ?: "Failed to load compilations")
+                    }
                 }
             }
         }
-    }
 
-    fun deleteCompilation(compilationId: String) {
-        viewModelScope.launch {
-            try {
-                deleteCompilationUseCase(compilationId)
-                _state.update { s ->
-                    s.copy(compilations = s.compilations.filterNot { it.id == compilationId })
+        fun deleteCompilation(compilationId: String) {
+            viewModelScope.launch {
+                try {
+                    deleteCompilationUseCase(compilationId)
+                    _state.update { s ->
+                        s.copy(compilations = s.compilations.filterNot { it.id == compilationId })
+                    }
+                } catch (e: Exception) {
+                    _state.update { it.copy(error = e.message ?: "Failed to delete compilation") }
                 }
-            } catch (e: Exception) {
-                _state.update { it.copy(error = e.message ?: "Failed to delete compilation") }
             }
         }
-    }
 
-    fun dismissError() {
-        _state.update { it.copy(error = null) }
+        fun dismissError() {
+            _state.update { it.copy(error = null) }
+        }
     }
-}

@@ -27,8 +27,8 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class VideoDiaryFirebaseMessagingService : FirebaseMessagingService() {
-
     @Inject lateinit var tokenDataStore: TokenDataStore
+
     @Inject lateinit var notificationApi: NotificationApi
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -48,29 +48,34 @@ class VideoDiaryFirebaseMessagingService : FirebaseMessagingService() {
         val data = message.data
         val type = data["type"] ?: return
 
-        val (title, body, deepLinkUri) = when (type) {
-            TYPE_VIDEO_READY -> Triple(
-                "Video ready",
-                "Your video has been processed. Select your 1-second moment now.",
-                data["videoId"]?.let { "videodiary://clip_select/$it" },
-            )
-            TYPE_CLIP_READY -> Triple(
-                "Clip saved",
-                "Your daily clip has been saved successfully.",
-                "videodiary://home",
-            )
-            TYPE_COMPILATION_READY -> Triple(
-                "Compilation ready",
-                "Your compilation is ready to watch!",
-                data["compilationId"]?.let { "videodiary://player/$it" },
-            )
-            TYPE_COMPILATION_EXPIRING -> Triple(
-                "Compilation expiring soon",
-                "A compilation will expire in 24 hours. Download it to keep it.",
-                "videodiary://compilation_history",
-            )
-            else -> return
-        }
+        val (title, body, deepLinkUri) =
+            when (type) {
+                TYPE_VIDEO_READY ->
+                    Triple(
+                        "Video ready",
+                        "Your video has been processed. Select your 1-second moment now.",
+                        data["videoId"]?.let { "videodiary://clip_select/$it" },
+                    )
+                TYPE_CLIP_READY ->
+                    Triple(
+                        "Clip saved",
+                        "Your daily clip has been saved successfully.",
+                        "videodiary://home",
+                    )
+                TYPE_COMPILATION_READY ->
+                    Triple(
+                        "Compilation ready",
+                        "Your compilation is ready to watch!",
+                        data["compilationId"]?.let { "videodiary://player/$it" },
+                    )
+                TYPE_COMPILATION_EXPIRING ->
+                    Triple(
+                        "Compilation expiring soon",
+                        "A compilation will expire in 24 hours. Download it to keep it.",
+                        "videodiary://compilation_history",
+                    )
+                else -> return
+            }
 
         showNotification(
             title = title,
@@ -86,25 +91,28 @@ class VideoDiaryFirebaseMessagingService : FirebaseMessagingService() {
         deepLinkUri: String,
         notificationId: Int,
     ) {
-        val intent = Intent(Intent.ACTION_VIEW, deepLinkUri.toUri(), this, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val intent =
+            Intent(Intent.ACTION_VIEW, deepLinkUri.toUri(), this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            notificationId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                this,
+                notificationId,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .build()
+        val notification =
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(notificationId, notification)

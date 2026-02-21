@@ -6,15 +6,16 @@ import com.videodiary.android.domain.model.UserTier
 import com.videodiary.android.domain.model.WatermarkPosition
 import java.time.Instant
 
-fun UserResponseDto.toDomain(): User = User(
-    id = id,
-    email = email,
-    displayName = displayName,
-    tier = UserTier.valueOf(tier),
-    emailVerified = emailVerified,
-    profilePictureUrl = profilePictureUrl,
-    timezone = timezone,
-    defaultWatermarkPosition = WatermarkPosition.valueOf(defaultWatermarkPosition),
-    notificationsEnabled = notificationsEnabled,
-    createdAt = Instant.parse(createdAt),
-)
+fun UserResponseDto.toDomain(): User =
+    User(
+        id = id,
+        email = email,
+        displayName = displayName,
+        tier = UserTier.valueOf(tier),
+        emailVerified = emailVerified,
+        profilePictureUrl = profilePictureUrl,
+        timezone = timezone,
+        defaultWatermarkPosition = WatermarkPosition.valueOf(defaultWatermarkPosition),
+        notificationsEnabled = notificationsEnabled,
+        createdAt = Instant.parse(createdAt),
+    )

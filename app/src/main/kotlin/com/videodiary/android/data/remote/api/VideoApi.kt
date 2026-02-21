@@ -13,10 +13,14 @@ import retrofit2.http.Query
 
 interface VideoApi {
     @POST("videos/upload/initiate")
-    suspend fun initiateUpload(@Body request: InitiateUploadRequest): InitiateUploadResponse
+    suspend fun initiateUpload(
+        @Body request: InitiateUploadRequest,
+    ): InitiateUploadResponse
 
     @POST("videos/{videoId}/upload/complete")
-    suspend fun completeUpload(@Path("videoId") videoId: String)
+    suspend fun completeUpload(
+        @Path("videoId") videoId: String,
+    )
 
     @GET("videos")
     suspend fun listVideos(
@@ -27,8 +31,12 @@ interface VideoApi {
     ): VideoPageResponse
 
     @GET("videos/{videoId}")
-    suspend fun getVideo(@Path("videoId") videoId: String): VideoResponseDto
+    suspend fun getVideo(
+        @Path("videoId") videoId: String,
+    ): VideoResponseDto
 
     @DELETE("videos/{videoId}")
-    suspend fun deleteVideo(@Path("videoId") videoId: String)
+    suspend fun deleteVideo(
+        @Path("videoId") videoId: String,
+    )
 }

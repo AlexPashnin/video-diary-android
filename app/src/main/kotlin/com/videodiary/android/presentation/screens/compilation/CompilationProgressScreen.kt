@@ -68,9 +68,10 @@ fun CompilationProgressScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
             when (val current = state) {
@@ -118,11 +119,12 @@ private fun InProgressContent(progress: CompilationProgress) {
             )
         }
         Text(
-            text = if (progress.currentClip != null) {
-                "Clip ${progress.currentClip} of ${progress.clipCount}"
-            } else {
-                "Processing ${progress.clipCount} clips…"
-            },
+            text =
+                if (progress.currentClip != null) {
+                    "Clip ${progress.currentClip} of ${progress.clipCount}"
+                } else {
+                    "Processing ${progress.clipCount} clips…"
+                },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -148,13 +150,19 @@ private fun CompletedContent(onPlay: () -> Unit) {
 }
 
 @Composable
-private fun ErrorContent(message: String, onRetry: () -> Unit) {
+private fun ErrorContent(
+    message: String,
+    onRetry: () -> Unit,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(message, style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error)
+        Text(
+            message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+        )
         Button(onClick = onRetry) { Text("Retry") }
     }
 }

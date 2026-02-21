@@ -22,13 +22,14 @@ fun VideoPlayer(
     seekToMillis: Long? = null,
 ) {
     val context = LocalContext.current
-    val exoPlayer = remember(uri) {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(uri))
-            prepare()
-            this.playWhenReady = playWhenReady
+    val exoPlayer =
+        remember(uri) {
+            ExoPlayer.Builder(context).build().apply {
+                setMediaItem(MediaItem.fromUri(uri))
+                prepare()
+                this.playWhenReady = playWhenReady
+            }
         }
-    }
 
     LaunchedEffect(seekToMillis) {
         if (seekToMillis != null) exoPlayer.seekTo(seekToMillis)
@@ -43,10 +44,11 @@ fun VideoPlayer(
             PlayerView(ctx).apply {
                 player = exoPlayer
                 this.useController = useController
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                )
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
             }
         },
         modifier = modifier,

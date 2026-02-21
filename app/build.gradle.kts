@@ -1,5 +1,3 @@
-import com.google.protobuf.gradle.id
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -38,7 +36,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -60,7 +58,8 @@ android {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
+        // Version kept in sync with libs.versions.toml [versions] protobuf entry
+        artifact = "com.google.protobuf:protoc:4.28.3"
     }
     generateProtoTasks {
         all().forEach { task ->

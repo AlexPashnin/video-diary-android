@@ -13,7 +13,9 @@ import retrofit2.http.Query
 
 interface ClipApi {
     @POST("clips/select")
-    suspend fun selectClip(@Body request: SelectClipRequest): ClipResponseDto
+    suspend fun selectClip(
+        @Body request: SelectClipRequest,
+    ): ClipResponseDto
 
     @GET("clips")
     suspend fun listClips(
@@ -22,10 +24,14 @@ interface ClipApi {
     ): ClipPageResponse
 
     @GET("clips/{clipId}")
-    suspend fun getClip(@Path("clipId") clipId: String): ClipResponseDto
+    suspend fun getClip(
+        @Path("clipId") clipId: String,
+    ): ClipResponseDto
 
     @DELETE("clips/{clipId}")
-    suspend fun deleteClip(@Path("clipId") clipId: String)
+    suspend fun deleteClip(
+        @Path("clipId") clipId: String,
+    )
 
     @GET("clips/calendar")
     suspend fun getCalendar(

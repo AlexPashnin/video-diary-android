@@ -91,24 +91,26 @@ fun UploadScreen(
         }
     }
 
-    val mediaPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-    ) { uri: Uri? ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val mimeType = context.contentResolver.getType(uri) ?: ""
-        if (!mimeType.startsWith("video/")) {
-            validationError = "Please select a video file."
-            return@rememberLauncherForActivityResult
+    val mediaPicker =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri: Uri? ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val mimeType = context.contentResolver.getType(uri) ?: ""
+            if (!mimeType.startsWith("video/")) {
+                validationError = "Please select a video file."
+                return@rememberLauncherForActivityResult
+            }
+            val size =
+                context.contentResolver
+                    .query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
+                    ?.use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L } ?: 0L
+            if (size > MAX_VIDEO_SIZE_BYTES) {
+                validationError = "Video must be under 200 MB."
+                return@rememberLauncherForActivityResult
+            }
+            viewModel.onVideoSelected(uri)
         }
-        val size = context.contentResolver
-            .query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
-            ?.use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L } ?: 0L
-        if (size > MAX_VIDEO_SIZE_BYTES) {
-            validationError = "Video must be under 200 MB."
-            return@rememberLauncherForActivityResult
-        }
-        viewModel.onVideoSelected(uri)
-    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Upload Video") }) },
@@ -120,7 +122,7 @@ fun UploadScreen(
                     modifier = Modifier.padding(innerPadding),
                     onPickFromGallery = {
                         mediaPicker.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
                         )
                     },
                     onRecordClick = onRecordClick,
@@ -134,7 +136,7 @@ fun UploadScreen(
                     modifier = Modifier.padding(innerPadding),
                     onPickDifferent = {
                         mediaPicker.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
                         )
                     },
                     onDateClick = { showDatePicker = true },
@@ -168,10 +170,11 @@ fun UploadScreen(
 
         if (showDatePicker) {
             val selectedDate = (state as? UploadState.VideoSelected)?.date ?: LocalDate.now()
-            val initialMillis = selectedDate
-                .atStartOfDay(ZoneId.of("UTC"))
-                .toInstant()
-                .toEpochMilli()
+            val initialMillis =
+                selectedDate
+                    .atStartOfDay(ZoneId.of("UTC"))
+                    .toInstant()
+                    .toEpochMilli()
             val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
 
             DatePickerDialog(
@@ -179,9 +182,10 @@ fun UploadScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            val date = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneId.of("UTC"))
-                                .toLocalDate()
+                            val date =
+                                Instant.ofEpochMilli(millis)
+                                    .atZone(ZoneId.of("UTC"))
+                                    .toLocalDate()
                             viewModel.setDate(date)
                         }
                         showDatePicker = false
@@ -204,9 +208,10 @@ private fun IdleContent(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -255,9 +260,10 @@ private fun VideoSelectedContent(
     Column(modifier = modifier.fillMaxSize()) {
         VideoPlayer(
             uri = uri,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
         )
         Column(
             modifier = Modifier.padding(16.dp),
@@ -301,9 +307,10 @@ private fun UploadingContent(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

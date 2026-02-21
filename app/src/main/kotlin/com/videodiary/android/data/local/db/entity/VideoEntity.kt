@@ -7,13 +7,16 @@ import androidx.room.PrimaryKey
 data class VideoEntity(
     @PrimaryKey val id: String,
     val userId: String,
-    val date: String, // ISO date string
+    // ISO date string
+    val date: String,
     val status: String,
     val fileSize: Long?,
     val durationSeconds: Double?,
     val spriteSheetUrl: String?,
     val waveformUrl: String?,
     val videoUrl: String?,
-    val createdAt: Long, // epoch millis
-    val updatedAt: Long, // epoch millis
+    // epoch millis
+    val createdAt: Long,
+    // epoch millis
+    val updatedAt: Long,
 )

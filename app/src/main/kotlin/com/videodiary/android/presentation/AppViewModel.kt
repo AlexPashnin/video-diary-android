@@ -10,14 +10,16 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
-class AppViewModel @Inject constructor(
-    networkConnectivityObserver: NetworkConnectivityObserver,
-) : ViewModel() {
-
-    val isOnline: StateFlow<Boolean> = networkConnectivityObserver.isOnline
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = true,
-        )
-}
+class AppViewModel
+    @Inject
+    constructor(
+        networkConnectivityObserver: NetworkConnectivityObserver,
+    ) : ViewModel() {
+        val isOnline: StateFlow<Boolean> =
+            networkConnectivityObserver.isOnline
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5_000),
+                    initialValue = true,
+                )
+    }

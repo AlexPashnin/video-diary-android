@@ -8,11 +8,14 @@ data class ClipEntity(
     @PrimaryKey val id: String,
     val userId: String,
     val videoId: String,
-    val date: String, // ISO date string
+    // ISO date string
+    val date: String,
     val status: String,
     val startTimeSeconds: Double,
     val objectKey: String?,
     val fileSize: Long?,
-    val createdAt: Long, // epoch millis
-    val updatedAt: Long, // epoch millis
+    // epoch millis
+    val createdAt: Long,
+    // epoch millis
+    val updatedAt: Long,
 )

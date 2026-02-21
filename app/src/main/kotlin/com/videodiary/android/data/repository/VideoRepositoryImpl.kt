@@ -18,53 +18,55 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class VideoRepositoryImpl @Inject constructor(
-    private val videoApi: VideoApi,
-    private val videoDao: VideoDao,
-) : VideoRepository {
+class VideoRepositoryImpl
+    @Inject
+    constructor(
+        private val videoApi: VideoApi,
+        private val videoDao: VideoDao,
+    ) : VideoRepository {
+        override suspend fun initiateUpload(date: LocalDate): Pair<String, String> {
+            val response = videoApi.initiateUpload(InitiateUploadRequest(date.toString()))
+            return response.videoId to response.uploadUrl
+        }
 
-    override suspend fun initiateUpload(date: LocalDate): Pair<String, String> {
-        val response = videoApi.initiateUpload(InitiateUploadRequest(date.toString()))
-        return response.videoId to response.uploadUrl
-    }
+        override suspend fun completeUpload(videoId: String) {
+            videoApi.completeUpload(videoId)
+        }
 
-    override suspend fun completeUpload(videoId: String) {
-        videoApi.completeUpload(videoId)
-    }
+        override suspend fun getVideo(videoId: String): Video {
+            return try {
+                val remote = videoApi.getVideo(videoId).toDomain()
+                videoDao.upsert(remote.toEntity())
+                remote
+            } catch (e: IOException) {
+                videoDao.getById(videoId)?.toDomain() ?: throw e
+            }
+        }
 
-    override suspend fun getVideo(videoId: String): Video {
-        return try {
-            val remote = videoApi.getVideo(videoId).toDomain()
-            videoDao.upsert(remote.toEntity())
-            remote
-        } catch (e: IOException) {
-            videoDao.getById(videoId)?.toDomain() ?: throw e
+        override fun observeVideo(videoId: String): Flow<Video> =
+            videoDao.observeById(videoId).filterNotNull().map { it.toDomain() }
+
+        override suspend fun listVideos(
+            date: LocalDate?,
+            status: VideoStatus?,
+            page: Int,
+        ): List<Video> {
+            return try {
+                val remote =
+                    videoApi.listVideos(
+                        date = date?.toString(),
+                        status = status?.name,
+                        page = page,
+                    ).content.map { it.toDomain() }
+                if (page == 0) videoDao.upsertAll(remote.map { it.toEntity() })
+                remote
+            } catch (e: IOException) {
+                if (page == 0) videoDao.getAll().map { it.toDomain() } else throw e
+            }
+        }
+
+        override suspend fun deleteVideo(videoId: String) {
+            videoApi.deleteVideo(videoId)
+            videoDao.deleteById(videoId)
         }
     }
-
-    override fun observeVideo(videoId: String): Flow<Video> =
-        videoDao.observeById(videoId).filterNotNull().map { it.toDomain() }
-
-    override suspend fun listVideos(
-        date: LocalDate?,
-        status: VideoStatus?,
-        page: Int,
-    ): List<Video> {
-        return try {
-            val remote = videoApi.listVideos(
-                date = date?.toString(),
-                status = status?.name,
-                page = page,
-            ).content.map { it.toDomain() }
-            if (page == 0) videoDao.upsertAll(remote.map { it.toEntity() })
-            remote
-        } catch (e: IOException) {
-            if (page == 0) videoDao.getAll().map { it.toDomain() } else throw e
-        }
-    }
-
-    override suspend fun deleteVideo(videoId: String) {
-        videoApi.deleteVideo(videoId)
-        videoDao.deleteById(videoId)
-    }
-}

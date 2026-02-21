@@ -141,9 +141,10 @@ private fun VideoReadyContent(
         if (video.videoUrl != null) {
             VideoPlayer(
                 uri = Uri.parse(video.videoUrl),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                 playWhenReady = false,
                 useController = false,
                 seekToMillis = seekToMillis,
@@ -151,9 +152,10 @@ private fun VideoReadyContent(
         } else {
             // Fallback: sprite sheet preview when video URL is unavailable
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                 contentAlignment = Alignment.Center,
             ) {
                 if (video.spriteSheetUrl != null) {
@@ -236,23 +238,24 @@ private fun SpriteSheetScrubber(
     var scrubberWidth by remember { mutableFloatStateOf(1f) }
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .onSizeChanged { scrubberWidth = it.width.toFloat().coerceAtLeast(1f) }
-            .pointerInput(scrubberWidth, safeMax) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        val t = (offset.x / scrubberWidth * safeMax).coerceIn(0.0, safeMax)
-                        onTimeSelected(t)
-                    },
-                    onDrag = { change, _ ->
-                        val t = (change.position.x / scrubberWidth * safeMax).coerceIn(0.0, safeMax)
-                        onTimeSelected(t)
-                    },
-                )
-            },
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .onSizeChanged { scrubberWidth = it.width.toFloat().coerceAtLeast(1f) }
+                .pointerInput(scrubberWidth, safeMax) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val t = (offset.x / scrubberWidth * safeMax).coerceIn(0.0, safeMax)
+                            onTimeSelected(t)
+                        },
+                        onDrag = { change, _ ->
+                            val t = (change.position.x / scrubberWidth * safeMax).coerceIn(0.0, safeMax)
+                            onTimeSelected(t)
+                        },
+                    )
+                },
     ) {
         // Sprite sheet as background
         AsyncImage(
@@ -306,22 +309,23 @@ private fun TimeScrubber(
     var scrubberWidth by remember { mutableFloatStateOf(1f) }
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(40.dp)
-            .onSizeChanged { scrubberWidth = it.width.toFloat().coerceAtLeast(1f) }
-            .pointerInput(scrubberWidth, safeMax) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        val t = (offset.x / scrubberWidth * safeMax).coerceIn(0.0, safeMax)
-                        onTimeSelected(t)
-                    },
-                    onDrag = { change, _ ->
-                        val t = (change.position.x / scrubberWidth * safeMax).coerceIn(0.0, safeMax)
-                        onTimeSelected(t)
-                    },
-                )
-            },
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .onSizeChanged { scrubberWidth = it.width.toFloat().coerceAtLeast(1f) }
+                .pointerInput(scrubberWidth, safeMax) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val t = (offset.x / scrubberWidth * safeMax).coerceIn(0.0, safeMax)
+                            onTimeSelected(t)
+                        },
+                        onDrag = { change, _ ->
+                            val t = (change.position.x / scrubberWidth * safeMax).coerceIn(0.0, safeMax)
+                            onTimeSelected(t)
+                        },
+                    )
+                },
     ) {
         androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
             val trackY = size.height / 2f

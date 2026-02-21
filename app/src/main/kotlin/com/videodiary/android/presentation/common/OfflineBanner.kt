@@ -24,7 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun OfflineBanner(isOffline: Boolean, modifier: Modifier = Modifier) {
+fun OfflineBanner(
+    isOffline: Boolean,
+    modifier: Modifier = Modifier,
+) {
     AnimatedVisibility(
         visible = isOffline,
         enter = slideInVertically() + fadeIn(),

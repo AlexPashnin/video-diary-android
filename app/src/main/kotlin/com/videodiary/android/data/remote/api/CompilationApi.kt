@@ -13,13 +13,19 @@ import retrofit2.http.Query
 
 interface CompilationApi {
     @POST("compilations/create")
-    suspend fun createCompilation(@Body request: CreateCompilationRequest): CompilationResponseDto
+    suspend fun createCompilation(
+        @Body request: CreateCompilationRequest,
+    ): CompilationResponseDto
 
     @GET("compilations/{compilationId}")
-    suspend fun getCompilation(@Path("compilationId") compilationId: String): CompilationResponseDto
+    suspend fun getCompilation(
+        @Path("compilationId") compilationId: String,
+    ): CompilationResponseDto
 
     @GET("compilations/{compilationId}/status")
-    suspend fun getCompilationStatus(@Path("compilationId") compilationId: String): CompilationStatusResponseDto
+    suspend fun getCompilationStatus(
+        @Path("compilationId") compilationId: String,
+    ): CompilationStatusResponseDto
 
     @GET("compilations/history")
     suspend fun listCompilations(
@@ -29,5 +35,7 @@ interface CompilationApi {
     ): CompilationPageResponse
 
     @DELETE("compilations/{compilationId}")
-    suspend fun deleteCompilation(@Path("compilationId") compilationId: String)
+    suspend fun deleteCompilation(
+        @Path("compilationId") compilationId: String,
+    )
 }

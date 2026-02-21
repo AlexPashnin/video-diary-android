@@ -8,20 +8,20 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 class VideoMapperTest {
-
-    private val baseDto = VideoResponseDto(
-        id = "vid1",
-        userId = "user1",
-        date = "2024-06-15",
-        status = "READY",
-        fileSize = 2048L,
-        durationSeconds = 45.0,
-        spriteSheetUrl = "https://cdn.example.com/sprite.jpg",
-        waveformUrl = null,
-        videoUrl = "https://cdn.example.com/video.mp4",
-        createdAt = "2024-06-15T10:00:00Z",
-        updatedAt = "2024-06-15T10:05:00Z",
-    )
+    private val baseDto =
+        VideoResponseDto(
+            id = "vid1",
+            userId = "user1",
+            date = "2024-06-15",
+            status = "READY",
+            fileSize = 2048L,
+            durationSeconds = 45.0,
+            spriteSheetUrl = "https://cdn.example.com/sprite.jpg",
+            waveformUrl = null,
+            videoUrl = "https://cdn.example.com/video.mp4",
+            createdAt = "2024-06-15T10:00:00Z",
+            updatedAt = "2024-06-15T10:05:00Z",
+        )
 
     @Test
     fun `toDomain maps id and userId`() {
@@ -54,13 +54,14 @@ class VideoMapperTest {
 
     @Test
     fun `toDomain with all nullable fields null`() {
-        val dto = baseDto.copy(
-            fileSize = null,
-            durationSeconds = null,
-            spriteSheetUrl = null,
-            waveformUrl = null,
-            videoUrl = null,
-        )
+        val dto =
+            baseDto.copy(
+                fileSize = null,
+                durationSeconds = null,
+                spriteSheetUrl = null,
+                waveformUrl = null,
+                videoUrl = null,
+            )
         val domain = dto.toDomain()
         assertNull(domain.fileSize)
         assertNull(domain.durationSeconds)

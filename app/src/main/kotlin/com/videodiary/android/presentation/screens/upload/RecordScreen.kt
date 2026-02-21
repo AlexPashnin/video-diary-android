@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.view.ViewGroup
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -56,8 +58,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -69,8 +69,11 @@ import java.time.LocalDate
 
 private sealed interface RecordState {
     data object PermissionRequired : RecordState
+
     data object Idle : RecordState
+
     data object Recording : RecordState
+
     data class Recorded(val uri: Uri) : RecordState
 }
 
@@ -91,30 +94,34 @@ fun RecordScreen(
 
     // Check camera permissions on first composition
     LaunchedEffect(Unit) {
-        val cameraGranted = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
-        val audioGranted = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED
+        val cameraGranted =
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.CAMERA,
+            ) == PackageManager.PERMISSION_GRANTED
+        val audioGranted =
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.RECORD_AUDIO,
+            ) == PackageManager.PERMISSION_GRANTED
         if (!cameraGranted || !audioGranted) {
             recordState = RecordState.PermissionRequired
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-    ) { permissions ->
-        val granted = permissions.values.all { it }
-        recordState = if (granted) RecordState.Idle else RecordState.PermissionRequired
-    }
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+        ) { permissions ->
+            val granted = permissions.values.all { it }
+            recordState = if (granted) RecordState.Idle else RecordState.PermissionRequired
+        }
 
     // CameraX setup
-    val recorder = remember {
-        Recorder.Builder()
-            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-            .build()
-    }
+    val recorder =
+        remember {
+            Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                .build()
+        }
     val videoCapture = remember { VideoCapture.withOutput(recorder) }
     val preview = remember { Preview.Builder().build() }
     val previewView = remember { PreviewView(context) }
@@ -123,10 +130,14 @@ fun RecordScreen(
         preview.setSurfaceProvider(previewView.surfaceProvider)
     }
 
-    val cameraSelector = remember(useFrontCamera) {
-        if (useFrontCamera) CameraSelector.DEFAULT_FRONT_CAMERA
-        else CameraSelector.DEFAULT_BACK_CAMERA
-    }
+    val cameraSelector =
+        remember(useFrontCamera) {
+            if (useFrontCamera) {
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            } else {
+                CameraSelector.DEFAULT_BACK_CAMERA
+            }
+        }
 
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
 
@@ -171,7 +182,7 @@ fun RecordScreen(
                 PermissionRequiredContent(
                     onRequestPermissions = {
                         permissionLauncher.launch(
-                            arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+                            arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
                         )
                     },
                     onBack = onBack,
@@ -183,10 +194,11 @@ fun RecordScreen(
                 AndroidView(
                     factory = {
                         previewView.apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                            )
+                            layoutParams =
+                                ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                )
                         }
                     },
                     modifier = Modifier.fillMaxSize(),
@@ -194,10 +206,11 @@ fun RecordScreen(
 
                 // Top controls
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                            .padding(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -225,40 +238,44 @@ fun RecordScreen(
 
                 // Record button
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(Color.Black.copy(alpha = 0.4f))
-                        .navigationBarsPadding()
-                        .padding(vertical = 32.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .background(Color.Black.copy(alpha = 0.4f))
+                            .navigationBarsPadding()
+                            .padding(vertical = 32.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     IconButton(
                         onClick = {
                             when (current) {
                                 RecordState.Idle -> {
-                                    val tempFile = File(
-                                        context.cacheDir,
-                                        "recording_${System.currentTimeMillis()}.mp4",
-                                    )
+                                    val tempFile =
+                                        File(
+                                            context.cacheDir,
+                                            "recording_${System.currentTimeMillis()}.mp4",
+                                        )
                                     val outputOptions = FileOutputOptions.Builder(tempFile).build()
-                                    activeRecording = videoCapture.output
-                                        .prepareRecording(context, outputOptions)
-                                        .withAudioEnabled()
-                                        .start(ContextCompat.getMainExecutor(context)) { event ->
-                                            when (event) {
-                                                is VideoRecordEvent.Finalize -> {
-                                                    if (!event.hasError()) {
-                                                        recordState = RecordState.Recorded(
-                                                            event.outputResults.outputUri
-                                                        )
-                                                    } else {
-                                                        recordState = RecordState.Idle
+                                    activeRecording =
+                                        videoCapture.output
+                                            .prepareRecording(context, outputOptions)
+                                            .withAudioEnabled()
+                                            .start(ContextCompat.getMainExecutor(context)) { event ->
+                                                when (event) {
+                                                    is VideoRecordEvent.Finalize -> {
+                                                        if (!event.hasError()) {
+                                                            recordState =
+                                                                RecordState.Recorded(
+                                                                    event.outputResults.outputUri,
+                                                                )
+                                                        } else {
+                                                            recordState = RecordState.Idle
+                                                        }
                                                     }
+                                                    else -> {}
                                                 }
-                                                else -> {}
                                             }
-                                        }
                                     recordState = RecordState.Recording
                                 }
                                 RecordState.Recording -> {
@@ -271,11 +288,12 @@ fun RecordScreen(
                         modifier = Modifier.size(72.dp),
                     ) {
                         Icon(
-                            imageVector = if (current is RecordState.Recording) {
-                                Icons.Default.Stop
-                            } else {
-                                Icons.Default.Circle
-                            },
+                            imageVector =
+                                if (current is RecordState.Recording) {
+                                    Icons.Default.Stop
+                                } else {
+                                    Icons.Default.Circle
+                                },
                             contentDescription = if (current is RecordState.Recording) "Stop" else "Record",
                             tint = if (current is RecordState.Recording) Color.White else Color.Red,
                             modifier = Modifier.size(64.dp),
@@ -314,9 +332,10 @@ fun RecordScreen(
 
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding(),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding(),
         )
     }
 }
@@ -327,9 +346,10 @@ private fun PermissionRequiredContent(
     onBack: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -359,9 +379,10 @@ private fun RecordedPreviewContent(
     Column(modifier = Modifier.fillMaxSize()) {
         VideoPlayer(
             uri = uri,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
         )
         Column(
             modifier = Modifier.padding(16.dp),
@@ -382,9 +403,10 @@ private fun RecordedPreviewContent(
 @Composable
 private fun UploadingContent(progress: Int) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

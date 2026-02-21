@@ -4,7 +4,8 @@ import androidx.room.Entity
 
 @Entity(tableName = "calendar_days", primaryKeys = ["date"])
 data class CalendarDayEntity(
-    val date: String, // ISO date string, primary key
+    // ISO date string, primary key
+    val date: String,
     val hasClip: Boolean,
     val clipId: String?,
     val clipStatus: String?,

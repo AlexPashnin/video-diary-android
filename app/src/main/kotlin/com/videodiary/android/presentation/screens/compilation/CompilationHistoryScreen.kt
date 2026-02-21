@@ -77,9 +77,10 @@ fun CompilationHistoryScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
         ) {
             when {
                 state.isLoading -> {
@@ -127,22 +128,26 @@ private fun SwipeToDismissCompilationItem(
     onDelete: () -> Unit,
     onClick: () -> Unit,
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else false
-        }
-    )
+    val dismissState =
+        rememberSwipeToDismissBoxState(
+            confirmValueChange = { value ->
+                if (value == SwipeToDismissBoxValue.EndToStart) {
+                    onDelete()
+                    true
+                } else {
+                    false
+                }
+            },
+        )
 
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 Icon(
@@ -170,9 +175,10 @@ private fun CompilationListItem(
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -216,8 +222,11 @@ private fun CompilationListItem(
                 }
                 CompilationStatus.FAILED -> {
                     IconButton(onClick = onClick) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Retry",
-                            tint = MaterialTheme.colorScheme.error)
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Retry",
+                            tint = MaterialTheme.colorScheme.error,
+                        )
                     }
                 }
             }
@@ -227,17 +236,21 @@ private fun CompilationListItem(
 
 @Composable
 private fun StatusBadge(status: CompilationStatus) {
-    val (label, color) = when (status) {
-        CompilationStatus.COMPLETED -> "Completed" to MaterialTheme.colorScheme.primary
-        CompilationStatus.PROCESSING -> "Processing" to MaterialTheme.colorScheme.tertiary
-        CompilationStatus.PENDING -> "Pending" to MaterialTheme.colorScheme.onSurfaceVariant
-        CompilationStatus.FAILED -> "Failed" to MaterialTheme.colorScheme.error
-    }
+    val (label, color) =
+        when (status) {
+            CompilationStatus.COMPLETED -> "Completed" to MaterialTheme.colorScheme.primary
+            CompilationStatus.PROCESSING -> "Processing" to MaterialTheme.colorScheme.tertiary
+            CompilationStatus.PENDING -> "Pending" to MaterialTheme.colorScheme.onSurfaceVariant
+            CompilationStatus.FAILED -> "Failed" to MaterialTheme.colorScheme.error
+        }
     Text(label, style = MaterialTheme.typography.labelSmall, color = color)
 }
 
 @Composable
-private fun EmptyContent(onCreateClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyContent(
+    onCreateClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier.padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -266,9 +279,10 @@ private fun EmptyContent(onCreateClick: () -> Unit, modifier: Modifier = Modifie
 }
 
 private val QualityOption.label: String
-    get() = when (this) {
-        com.videodiary.android.domain.model.QualityOption.Q_480P -> "480p"
-        com.videodiary.android.domain.model.QualityOption.Q_720P -> "720p"
-        com.videodiary.android.domain.model.QualityOption.Q_1080P -> "1080p"
-        com.videodiary.android.domain.model.QualityOption.Q_4K -> "4K"
-    }
+    get() =
+        when (this) {
+            com.videodiary.android.domain.model.QualityOption.Q_480P -> "480p"
+            com.videodiary.android.domain.model.QualityOption.Q_720P -> "720p"
+            com.videodiary.android.domain.model.QualityOption.Q_1080P -> "1080p"
+            com.videodiary.android.domain.model.QualityOption.Q_4K -> "4K"
+        }

@@ -34,5 +34,10 @@ enum class CompilationStatus { PENDING, PROCESSING, COMPLETED, FAILED }
 enum class QualityOption { Q_480P, Q_720P, Q_1080P, Q_4K }
 
 enum class WatermarkPosition {
-    TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, CENTER_TOP, CENTER_BOTTOM
+    TOP_LEFT,
+    TOP_RIGHT,
+    BOTTOM_LEFT,
+    BOTTOM_RIGHT,
+    CENTER_TOP,
+    CENTER_BOTTOM,
 }

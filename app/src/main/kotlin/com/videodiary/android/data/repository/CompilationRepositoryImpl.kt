@@ -19,60 +19,72 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class CompilationRepositoryImpl @Inject constructor(
-    private val compilationApi: CompilationApi,
-    private val storageApi: StorageApi,
-) : CompilationRepository {
+class CompilationRepositoryImpl
+    @Inject
+    constructor(
+        private val compilationApi: CompilationApi,
+        private val storageApi: StorageApi,
+    ) : CompilationRepository {
+        override suspend fun createCompilation(
+            startDate: LocalDate,
+            endDate: LocalDate,
+            quality: QualityOption,
+            watermarkPosition: WatermarkPosition,
+            clipIds: List<String>,
+        ): Compilation =
+            compilationApi.createCompilation(
+                CreateCompilationRequest(
+                    startDate = startDate.toString(),
+                    endDate = endDate.toString(),
+                    quality = quality.name,
+                    watermarkPosition = watermarkPosition.name,
+                    clipIds = clipIds,
+                ),
+            ).toDomain()
 
-    override suspend fun createCompilation(
-        startDate: LocalDate,
-        endDate: LocalDate,
-        quality: QualityOption,
-        watermarkPosition: WatermarkPosition,
-        clipIds: List<String>,
-    ): Compilation = compilationApi.createCompilation(
-        CreateCompilationRequest(
-            startDate = startDate.toString(),
-            endDate = endDate.toString(),
-            quality = quality.name,
-            watermarkPosition = watermarkPosition.name,
-            clipIds = clipIds,
-        )
-    ).toDomain()
+        override suspend fun getCompilation(compilationId: String): Compilation =
+            compilationApi.getCompilation(compilationId).toDomain()
 
-    override suspend fun getCompilation(compilationId: String): Compilation =
-        compilationApi.getCompilation(compilationId).toDomain()
+        override suspend fun getCompilationStatus(compilationId: String): CompilationProgress =
+            compilationApi.getCompilationStatus(compilationId).toDomain()
 
-    override suspend fun getCompilationStatus(compilationId: String): CompilationProgress =
-        compilationApi.getCompilationStatus(compilationId).toDomain()
+        override suspend fun listCompilations(
+            status: CompilationStatus?,
+            page: Int,
+        ): List<Compilation> =
+            compilationApi.listCompilations(status = status?.name, page = page).content.map { it.toDomain() }
 
-    override suspend fun listCompilations(status: CompilationStatus?, page: Int): List<Compilation> =
-        compilationApi.listCompilations(status = status?.name, page = page).content.map { it.toDomain() }
+        override suspend fun deleteCompilation(compilationId: String) {
+            compilationApi.deleteCompilation(compilationId)
+        }
 
-    override suspend fun deleteCompilation(compilationId: String) {
-        compilationApi.deleteCompilation(compilationId)
-    }
+        override suspend fun getDownloadUrl(compilationId: String): String {
+            val compilation = compilationApi.getCompilation(compilationId)
+            val objectKey =
+                compilation.objectKey
+                    ?: error("Compilation $compilationId has no object key")
+            return storageApi.generateDownloadUrl(
+                PresignedDownloadRequest(bucket = BUCKET_COMPILATIONS, objectKey = objectKey),
+            ).url
+        }
 
-    override suspend fun getDownloadUrl(compilationId: String): String {
-        val compilation = compilationApi.getCompilation(compilationId)
-        val objectKey = compilation.objectKey
-            ?: error("Compilation $compilationId has no object key")
-        return storageApi.generateDownloadUrl(
-            PresignedDownloadRequest(bucket = BUCKET_COMPILATIONS, objectKey = objectKey)
-        ).url
-    }
+        override fun observeCompilationProgress(compilationId: String): Flow<CompilationProgress> =
+            flow {
+                while (true) {
+                    val progress = compilationApi.getCompilationStatus(compilationId).toDomain()
+                    emit(progress)
+                    if (
+                        progress.status == CompilationStatus.COMPLETED ||
+                        progress.status == CompilationStatus.FAILED
+                    ) {
+                        break
+                    }
+                    delay(POLL_INTERVAL_MS)
+                }
+            }
 
-    override fun observeCompilationProgress(compilationId: String): Flow<CompilationProgress> = flow {
-        while (true) {
-            val progress = compilationApi.getCompilationStatus(compilationId).toDomain()
-            emit(progress)
-            if (progress.status == CompilationStatus.COMPLETED || progress.status == CompilationStatus.FAILED) break
-            delay(POLL_INTERVAL_MS)
+        companion object {
+            private const val POLL_INTERVAL_MS = 3_000L
+            private const val BUCKET_COMPILATIONS = "compilations"
         }
     }
-
-    companion object {
-        private const val POLL_INTERVAL_MS = 3_000L
-        private const val BUCKET_COMPILATIONS = "compilations"
-    }
-}

@@ -12,10 +12,14 @@ import retrofit2.http.Query
 
 interface StorageApi {
     @POST("storage/presigned-url/upload")
-    suspend fun generateUploadUrl(@Body request: PresignedUploadRequest): PresignedUrlResponse
+    suspend fun generateUploadUrl(
+        @Body request: PresignedUploadRequest,
+    ): PresignedUrlResponse
 
     @POST("storage/presigned-url/download")
-    suspend fun generateDownloadUrl(@Body request: PresignedDownloadRequest): PresignedUrlResponse
+    suspend fun generateDownloadUrl(
+        @Body request: PresignedDownloadRequest,
+    ): PresignedUrlResponse
 
     @GET("storage/objects/info")
     suspend fun getObjectInfo(

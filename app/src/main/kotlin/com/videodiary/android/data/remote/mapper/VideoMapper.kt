@@ -6,16 +6,17 @@ import com.videodiary.android.domain.model.VideoStatus
 import java.time.Instant
 import java.time.LocalDate
 
-fun VideoResponseDto.toDomain(): Video = Video(
-    id = id,
-    userId = userId,
-    date = LocalDate.parse(date),
-    status = VideoStatus.valueOf(status),
-    fileSize = fileSize,
-    durationSeconds = durationSeconds,
-    spriteSheetUrl = spriteSheetUrl,
-    waveformUrl = waveformUrl,
-    videoUrl = videoUrl,
-    createdAt = Instant.parse(createdAt),
-    updatedAt = Instant.parse(updatedAt),
-)
+fun VideoResponseDto.toDomain(): Video =
+    Video(
+        id = id,
+        userId = userId,
+        date = LocalDate.parse(date),
+        status = VideoStatus.valueOf(status),
+        fileSize = fileSize,
+        durationSeconds = durationSeconds,
+        spriteSheetUrl = spriteSheetUrl,
+        waveformUrl = waveformUrl,
+        videoUrl = videoUrl,
+        createdAt = Instant.parse(createdAt),
+        updatedAt = Instant.parse(updatedAt),
+    )

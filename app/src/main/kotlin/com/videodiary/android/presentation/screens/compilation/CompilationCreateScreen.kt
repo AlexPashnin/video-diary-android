@@ -93,11 +93,12 @@ fun CompilationCreateScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             // Date range section
@@ -163,7 +164,10 @@ fun CompilationCreateScreen(
     if (showStartDatePicker) {
         DatePickerDialogWrapper(
             initial = state.startDate,
-            onConfirm = { viewModel.setStartDate(it); showStartDatePicker = false },
+            onConfirm = {
+                viewModel.setStartDate(it)
+                showStartDatePicker = false
+            },
             onDismiss = { showStartDatePicker = false },
         )
     }
@@ -171,7 +175,10 @@ fun CompilationCreateScreen(
     if (showEndDatePicker) {
         DatePickerDialogWrapper(
             initial = state.endDate,
-            onConfirm = { viewModel.setEndDate(it); showEndDatePicker = false },
+            onConfirm = {
+                viewModel.setEndDate(it)
+                showEndDatePicker = false
+            },
             onDismiss = { showEndDatePicker = false },
         )
     }
@@ -184,12 +191,14 @@ private fun DatePickerDialogWrapper(
     onConfirm: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initial
-            .atStartOfDay(ZoneId.of("UTC"))
-            .toInstant()
-            .toEpochMilli()
-    )
+    val datePickerState =
+        rememberDatePickerState(
+            initialSelectedDateMillis =
+                initial
+                    .atStartOfDay(ZoneId.of("UTC"))
+                    .toInstant()
+                    .toEpochMilli(),
+        )
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -215,11 +224,17 @@ private fun DateButton(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(label, style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Spacer(modifier = Modifier.height(4.dp))
-            Icon(Icons.Default.CalendarMonth, contentDescription = null,
-                modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Default.CalendarMonth,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
@@ -231,7 +246,10 @@ private fun DateButton(
 }
 
 @Composable
-private fun ClipCountSummary(clipCount: Int, isLoading: Boolean) {
+private fun ClipCountSummary(
+    clipCount: Int,
+    isLoading: Boolean,
+) {
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
@@ -244,11 +262,19 @@ private fun ClipCountSummary(clipCount: Int, isLoading: Boolean) {
             }
         } else {
             Text(
-                text = if (clipCount == 0) "No clips in selected range"
-                else "$clipCount clip${if (clipCount == 1) "" else "s"} found",
+                text =
+                    if (clipCount == 0) {
+                        "No clips in selected range"
+                    } else {
+                        "$clipCount clip${if (clipCount == 1) "" else "s"} found"
+                    },
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (clipCount == 0) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.primary,
+                color =
+                    if (clipCount == 0) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
             )
         }
     }
@@ -259,12 +285,13 @@ private fun QualitySelector(
     selected: QualityOption,
     onSelect: (QualityOption) -> Unit,
 ) {
-    val options = listOf(
-        QualityOption.Q_480P to "480p",
-        QualityOption.Q_720P to "720p",
-        QualityOption.Q_1080P to "1080p",
-        QualityOption.Q_4K to "4K",
-    )
+    val options =
+        listOf(
+            QualityOption.Q_480P to "480p",
+            QualityOption.Q_720P to "720p",
+            QualityOption.Q_1080P to "1080p",
+            QualityOption.Q_4K to "4K",
+        )
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -286,11 +313,18 @@ private fun WatermarkPositionSelector(
     onSelect: (WatermarkPosition) -> Unit,
 ) {
     // 3 rows × 2 cols grid matching the 6 positions
-    val rows = listOf(
-        listOf(WatermarkPosition.TOP_LEFT to "↖ Top Left", WatermarkPosition.TOP_RIGHT to "↗ Top Right"),
-        listOf(WatermarkPosition.CENTER_TOP to "⬆ Center Top", WatermarkPosition.CENTER_BOTTOM to "⬇ Center Bottom"),
-        listOf(WatermarkPosition.BOTTOM_LEFT to "↙ Bottom Left", WatermarkPosition.BOTTOM_RIGHT to "↘ Bottom Right"),
-    )
+    val rows =
+        listOf(
+            listOf(WatermarkPosition.TOP_LEFT to "↖ Top Left", WatermarkPosition.TOP_RIGHT to "↗ Top Right"),
+            listOf(
+                WatermarkPosition.CENTER_TOP to "⬆ Center Top",
+                WatermarkPosition.CENTER_BOTTOM to "⬇ Center Bottom",
+            ),
+            listOf(
+                WatermarkPosition.BOTTOM_LEFT to "↙ Bottom Left",
+                WatermarkPosition.BOTTOM_RIGHT to "↘ Bottom Right",
+            ),
+        )
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         rows.forEach { row ->
             Row(
@@ -303,21 +337,34 @@ private fun WatermarkPositionSelector(
                         onClick = { onSelect(position) },
                         modifier = Modifier.weight(1f),
                         shape = MaterialTheme.shapes.small,
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outlineVariant,
-                        ),
+                        color =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            },
+                        border =
+                            BorderStroke(
+                                width = if (isSelected) 2.dp else 1.dp,
+                                color =
+                                    if (isSelected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.outlineVariant
+                                    },
+                            ),
                     ) {
                         Text(
                             text = label,
                             modifier = Modifier.padding(10.dp),
                             style = MaterialTheme.typography.labelMedium,
                             textAlign = TextAlign.Center,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                            else MaterialTheme.colorScheme.onSurface,
+                            color =
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
                         )
                     }
                 }
@@ -328,6 +375,9 @@ private fun WatermarkPositionSelector(
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }

@@ -25,41 +25,46 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
     @Provides
     @Singleton
-    fun provideJson(): Json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        coerceInputValues = true
-    }
+    fun provideJson(): Json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            coerceInputValues = true
+        }
 
     @Provides
     @Singleton
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
         tokenRefreshAuthenticator: TokenRefreshAuthenticator,
-    ): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(authInterceptor)
-        .authenticator(tokenRefreshAuthenticator)
-        .apply {
-            if (BuildConfig.DEBUG) {
-                addInterceptor(
-                    HttpLoggingInterceptor().apply {
-                        level = HttpLoggingInterceptor.Level.BODY
-                    }
-                )
+    ): OkHttpClient =
+        OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .authenticator(tokenRefreshAuthenticator)
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    addInterceptor(
+                        HttpLoggingInterceptor().apply {
+                            level = HttpLoggingInterceptor.Level.BODY
+                        },
+                    )
+                }
             }
-        }
-        .build()
+            .build()
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit = Retrofit.Builder()
-        .baseUrl(BuildConfig.BASE_URL + "/")
-        .client(okHttpClient)
-        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-        .build()
+    fun provideRetrofit(
+        okHttpClient: OkHttpClient,
+        json: Json,
+    ): Retrofit =
+        Retrofit.Builder()
+            .baseUrl(BuildConfig.BASE_URL + "/")
+            .client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
 
     @Provides
     @Singleton
@@ -75,8 +80,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideCompilationApi(retrofit: Retrofit): CompilationApi =
-        retrofit.create(CompilationApi::class.java)
+    fun provideCompilationApi(retrofit: Retrofit): CompilationApi = retrofit.create(CompilationApi::class.java)
 
     @Provides
     @Singleton
@@ -84,8 +88,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideNotificationApi(retrofit: Retrofit): NotificationApi =
-        retrofit.create(NotificationApi::class.java)
+    fun provideNotificationApi(retrofit: Retrofit): NotificationApi = retrofit.create(NotificationApi::class.java)
 
     @Provides
     @Singleton

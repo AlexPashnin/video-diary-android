@@ -13,13 +13,22 @@ interface CalendarDayDao {
     suspend fun upsertAll(days: List<CalendarDayEntity>)
 
     @Query("SELECT * FROM calendar_days WHERE year = :year AND month = :month ORDER BY date ASC")
-    fun observeByMonth(year: Int, month: Int): Flow<List<CalendarDayEntity>>
+    fun observeByMonth(
+        year: Int,
+        month: Int,
+    ): Flow<List<CalendarDayEntity>>
 
     @Query("SELECT * FROM calendar_days WHERE year = :year AND month = :month ORDER BY date ASC")
-    suspend fun getByMonth(year: Int, month: Int): List<CalendarDayEntity>
+    suspend fun getByMonth(
+        year: Int,
+        month: Int,
+    ): List<CalendarDayEntity>
 
     @Query("DELETE FROM calendar_days WHERE year = :year AND month = :month")
-    suspend fun deleteByMonth(year: Int, month: Int)
+    suspend fun deleteByMonth(
+        year: Int,
+        month: Int,
+    )
 
     @Query("DELETE FROM calendar_days")
     suspend fun deleteAll()

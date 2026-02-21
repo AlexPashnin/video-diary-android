@@ -67,15 +67,16 @@ fun RegisterScreen(
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState())
-                .imePadding(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(),
         ) {
             Spacer(Modifier.height(16.dp))
 
@@ -96,10 +97,11 @@ fun RegisterScreen(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next,
-                ),
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next,
+                    ),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -109,10 +111,11 @@ fun RegisterScreen(
                 onValueChange = { password = it },
                 label = { Text("Password (min 8 characters)") },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                ),
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done,
+                    ),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -120,8 +123,9 @@ fun RegisterScreen(
 
             Button(
                 onClick = { viewModel.register(email, password, displayName) },
-                enabled = state !is RegisterState.Loading &&
-                    displayName.isNotBlank() && email.isNotBlank() && password.length >= 8,
+                enabled =
+                    state !is RegisterState.Loading &&
+                        displayName.isNotBlank() && email.isNotBlank() && password.length >= 8,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (state is RegisterState.Loading) {

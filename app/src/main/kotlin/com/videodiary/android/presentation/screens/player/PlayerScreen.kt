@@ -33,7 +33,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.videodiary.android.domain.model.Compilation
@@ -87,13 +86,14 @@ private fun PlayerContent(
     onDownload: () -> Unit,
 ) {
     val context = LocalContext.current
-    val exoPlayer = remember(videoUrl) {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
-            prepare()
-            playWhenReady = true
+    val exoPlayer =
+        remember(videoUrl) {
+            ExoPlayer.Builder(context).build().apply {
+                setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))
+                prepare()
+                playWhenReady = true
+            }
         }
-    }
 
     DisposableEffect(exoPlayer) {
         onDispose { exoPlayer.release() }
@@ -108,10 +108,11 @@ private fun PlayerContent(
         }
     }
 
-    val currentDate = remember(positionMs, compilation.startDate) {
-        val secondsElapsed = (positionMs / 1000).toInt()
-        compilation.startDate.plusDays(secondsElapsed.toLong())
-    }
+    val currentDate =
+        remember(positionMs, compilation.startDate) {
+            val secondsElapsed = (positionMs / 1000).toInt()
+            compilation.startDate.plusDays(secondsElapsed.toLong())
+        }
     val dateFmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
@@ -121,10 +122,11 @@ private fun PlayerContent(
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = true
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                    )
+                    layoutParams =
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        )
                 }
             },
             modifier = Modifier.fillMaxSize(),
@@ -133,9 +135,10 @@ private fun PlayerContent(
         // Back button — top start
         IconButton(
             onClick = onBack,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp),
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
@@ -147,16 +150,18 @@ private fun PlayerContent(
 
         // Share + Download buttons — top end
         Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp),
         ) {
             androidx.compose.foundation.layout.Row {
                 IconButton(onClick = {
-                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, videoUrl)
-                    }
+                    val sendIntent =
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, videoUrl)
+                        }
                     context.startActivity(Intent.createChooser(sendIntent, "Share compilation"))
                 }) {
                     Icon(
@@ -182,9 +187,11 @@ private fun PlayerContent(
             text = currentDate.format(dateFmt),
             style = MaterialTheme.typography.labelLarge,
             color = Color.White,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 16.dp, bottom = 72.dp), // above ExoPlayer controls
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, bottom = 72.dp),
+            // above ExoPlayer controls
         )
     }
 }

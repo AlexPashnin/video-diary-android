@@ -16,6 +16,8 @@ import com.videodiary.android.data.local.db.entity.VideoEntity
 )
 abstract class VideoDiaryDatabase : RoomDatabase() {
     abstract fun videoDao(): VideoDao
+
     abstract fun clipDao(): ClipDao
+
     abstract fun calendarDayDao(): CalendarDayDao
 }
